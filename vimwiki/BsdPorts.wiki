@@ -1,0 +1,14 @@
+
+upgrading ports:
+portsnap fetch upgrade
+pushd /usr/ports/packages/All
+portmaster -agbD --delete-build-only --no-confirm
+
+
+portsnap fetch update && portmaster -agbDCKP --delete-build-only  --no-confirm --local-dir=<...>
+
+Building with debug info
+- make WITH_DEBUG=yes strip= install
+
+Which Ports have updates?
+portmaster -L --index-only| egrep '(ew|ort) version|total install'

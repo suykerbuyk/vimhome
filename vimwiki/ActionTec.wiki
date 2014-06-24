@@ -1,0 +1,5 @@
+To retrieve the password for the PPP connection
+- telnet into the device
+- sh to get a root shell
+- ps aux and look for pppd process.   ps doesn't show the full command line so....
+- cat /proc/PID/cmdline  to see the full username/password.

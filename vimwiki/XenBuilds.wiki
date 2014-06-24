@@ -1,0 +1,75 @@
+zypper ar http://rpmcache.eng.sldomain.com/spectra spectra
+zypper ar http://rpmcache.eng.sldomain.com/vendor vendor
+
+zypper mr -e spectra
+zypper mr -e vendor
+
+monit stop misc_worker.rb && zypper mr -e 1 && zypper mr -e 2
+
+Build dependencies that must be installed on suse 11.3
+
+
+zypper in gcc Make Binutils ncurses-devel zlib-devel python-devel xorg-x11-devel bison flex python-pam pyxml python-openssl python acpica acpid gcc-32bit gcc-c++ gcc-c++32bit kernel-devel perl perl-libwww-perl screen less yast2-ncurses yast2 yast2-control-center yast2-core yast2-dbus-client yast2-hardware-detection yast2-ncurses yast2-ncurses-pkg yast2-qt yast2-storage yast2-sysconfig yast2-trans-en_US yast2-trans-stats yast2-wagon yast2-users yast2-update yast2-xml mercurial subversion subversion-doc subversion-tools rsync yast2-nfs-client yast2-nfs-common yast2-nfs-server nfs-client nfs-kernel-server perl-Crypt-SSLeay xdg-utils yast2-qt-pkg libqdialogsolver1 dev86 vim vim-base vim-data  xorg-x11-libs xorg-x11-libs-32bit xorg-x11-libXt xorg-x11-libXt-32bit patterns-openSUSE-devel_kernel kernel-xen-devel kernel-source kernel-syms redline-dev libgcc libgcc-32bit libopenssl-devel
+
+
+
+
+$PROJ/rpmbuild.rb -S xen.spec -- -bb --define "_topdir $PWD" --define "_tpmpath $PWD/tmp"
+
+cat xen-unstable.hg-2.patch | patch -p1 --dry-run
+
+hg clone http://xenbits.xensource.com/hg/xen-unstable.hg/
+
+
+fstab for ns1 nfs export:
+echo "ns1.eng:/usr/home/  /home/ nfs defaults 0 0" >>/etc/fstab
+
+mount -t nfs ns1.sldomain.com:/usr/home/johns/export/perforce/products/zLine/StorageDomain/zfs_worker /usr/local/zLine/
+
+uid=1005
+echo "ns1.eng.sldomain.com:/usr/home/ /usr/home nfs rw 0 0" >>/etc/fstab
+useradd -u 1005 -g users -G video,wheel -p b4ucme -m johns -d /usr/home/johns
+
+Spectra Repo:
+baseurl=http://rpmcache.eng.sldomain.com/spectra
+
+Vendor Repo:
+baseurl=http://rpmcache.eng.sldomain.com/vendor
+monit stop update_worker.rb
+zypper ar http://rpmcache.eng.sldomain.com/spectra spectra
+zypper ar http://rpmcache.eng.sldomain.com/vendor  vendor
+zypper mr -a -e -r
+
+
+
+Building an RPM on a dev machine:
+
+
+Install the P4 Ruby bindings:
+	ftp://ftp.perforce.com/perforce/r11.1/bin.tools/p4ruby.tgz
+
+The P4 API for Linux:
+	ftp://ftp.perforce.com/perforce/r11.1/bin.linux26x86_64/p4api.tgz
+The P4 API for BSD 7+
+	ftp://ftp.perforce.com/perforce/r11.1/bin.freebsd70x86_64/p4api.tgz
+
+
+
+CD to the top of the RPM build root for the project, and then:
+/usr/home/willa/dev/p4/shared/build/spectra_build xen:build -l -t /tmp
+
+may have to first:
+zypper in pciutils-devel  LibVNCServer-devel SDL-devel curl-devel  dev86 latex2html libjpeg-devel libxml2-devel python-devel transfig libbz2-devel acpica txlive texlive-latex glibc-devel-32bit gcc-32bit gcc43-32bit kernel-source  kernel-syms kernel-xen-devel  patterns-openSUSE-devel_kernel xz-devel
+
+
+Blowing away da devices in ruby/irb:
+(0..7).each {|i| system "dd of=/dev/da#{i} if=/dev/zero bs=10M count=100" }
+
+newbie client:
+Client: johns_newbie
+View:
+        //depot/products/... //johns_newbie/products/...
+        //depot/users/johns/... //johns_newbie/users/johns/...
+        //depot/shared/cruiseconfig/... //johns_newbie/shared/cruiseconfig/...
+
+

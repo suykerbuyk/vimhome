@@ -1,0 +1,15 @@
+On sender:
+create a snapshot
+zfs send tank0/usr/ports@temp | nc 10.1.14.69 4004
+
+On Receiver:
+nc -l 4004 | zfs receive system/root0/usr/ports
+
+
+zfs send -RD sys@tdoay | bzip2 -c | ssh root@server "bzcat | zfs recv sys/usr/home/johns/laptop"
+
+zfs send -RD sys@2013-11-17 | bzip2 -c | ssh root@server "cat | t500.img.bz2"
+
+zfs send -RD sys@2013-11-17 | bzip2 -c | ssh johns@sc24 "cat > t500.img.bz2"
+
+zfs send -RD sys@2013-11-18 | xz -9 -e -c > /net/sc24/t500-2013-11-18.img.xz

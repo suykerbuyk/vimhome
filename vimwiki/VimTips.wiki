@@ -1,0 +1,89 @@
+Write a tool that uses getopt to parse commandline options
+Write a vim regex that finds space around parens. 
+
+
+Removing white space at the end of a line:
+  :%s/\s\+$//
+Removing White space at the beginning of lines:
+  :%s/^\s\+
+
+Recording vim macros:
+Generate an incrementing list:
+1) type 1 on a line by itself
+2) start recording a macro
+3) yy
+4) p 
+5) ctral-a
+6 stop recording
+7) repeat count, then playback
+
+Reformat Text
+==============
+1) set text textwidth=80 (set tw=80)
+2) Type block of text
+3) reformat with the gq motion (arror key, }, end)
+
+To insert special unicode chars:
+=================
+1) In insert mode, ctrl-k and then the mnemonic (rfc-1345.txt)
+2) example
+   א  = A+
+   á  = a'
+
+To save a home directories vi setup:
+=================
+tar -cJf viConfig.txz .vi* 
+
+
+Building FreeBSD kernel from vim
+==================
+map <F5> :!~/perforce/users/johns/scripts/bk -DKERNFAST KERNCONF=STRATA<CR>
+
+Cut and paste
+==================
+Cut the line that you want to move by typing dd, or visually select some lines (press V then move the cursor) and type d to cut the selected block.
+Then move the cursor, and paste the text at the new position (press p to paste after the line with the cursor, or P to paste before).
+You can cut several lines, or blocks of text, by appending to a register using an uppercase letter, for example:
+Move to the first line you wish to move; type "add to delete it to register a.
+Move to another line; type "Add to delete it and append to the same register.
+Move to another line; type "Add to delete it and append to the same register.
+or type "." for the same effect
+Select a range of lines vith V; type "Ad to delete the entire range and append it to the same register.
+Continue in this fashion.
+Move to the wanted destination.
+Press "ap to paste after the line with the cursor, or "aP to paste before.
+[edit]Move command
+
+You can move a line, or a block of lines, with the :m command. Examples:
+:m 12	 move current line to after line 12
+:m 0	 move current line to before first line
+:m $	 move current line to after last line
+:m 'a	 move current line to after line with mark a (see using marks)
+:m 'a-1	 move current line to before line with mark a
+:m '}-1	 move current line to the end of the current paragraph
+For clarity, a space is shown after the :m commands above, but that space is not required.
+To move a block of lines, use the same command but visually select the lines before entering the move command. You can also use arbitrary ranges with the move command. Examples:
+:5,7m 21	 move lines 5, 6 and 7 to after line 21
+:5,7m 0	 move lines 5, 6 and 7 to before first line
+:5,7m $	 move lines 5, 6 and 7 to after last line
+:.,.+4m 21	 move 5 lines starting at current line to after line 21
+:,+4m14	 same (. for current line is assumed)
+
+Reading command output from powershell into the current buffer/line
+==================================================================
+:%r!powershell -c ls
+
+Save a file with a specific kind of line endings.
+==================================================================
+:w ++ff=dos
+:w ++ff=mac
+:w ++ff=unix
+==================================================================
+set listchars=tab:>-,trail:-
+set list
+
+show trailing white space
+/\t - find all tabs
+/\s\+$ - find trailing spaces
+/ \+\ze\t - find spaces before tabs
+show trailing white space:

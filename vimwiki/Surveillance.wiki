@@ -1,0 +1,42 @@
+Huibregtse Cameras:
+	- Cam1 00D6FB00C1C9  48:02:2a:4a:67:5c
+	- Cam2 00B8FB00D45E  48:02:2a:43:9d:da
+	- Cam3 00B8FB00D958  48:02:2a:4a:75:4e
+	- Cam4 00D6FB01456B  48:02:2a:40:2e:7a
+	- Cam5 00D6FB014613  48:02:2a:40:39:18
+	- Cam6 Wired 04:5C:06:01:CB:8A Wireless 7C:DD:90:23:69:98
+	- Time: Sync with time.nist.gov, gmt-7 MST.
+	- Alias Settings: camera name all lower case.
+	- Basic Network settings:
+		* Ports:
+		* cam1 - 192.168.9.201:3080
+		* cam2 - 192.168.9.202:3081
+		* cam3 - 192.168.9.203:3082
+		* cam4 - 192.168.9.204:3083
+		* cam5 - 192.168.9.205:3084
+		* Obtain IP from DHCP.
+	- Wireless LAN:
+		* A1Accessories
+		* Infra Structure Mode
+		* WPA2 Personal (AES) 
+		* 0scarDGrouch
+	- ADSL Settings: None
+	- UPNP Settings:  Use UPNP 
+	- FTP Settings:
+		* Server: fun.thruhere.net
+		* Port: 21
+		* user: ftp
+		* Password: (none)
+		* FTP Upload folder: cameras
+		* FTP Mode: Port
+	- Alarm Service Settings:
+		* Motion Detection Armed: Checked
+		* Motion Detection Sensitivity: 10
+		* Upload on Image Alarm: Checked
+		* Upload Interval: 1 second
+
+Huibregtse Router:
+	- Admin Password: Kyushoj1
+	- Remote Admin Port: 16385 (use https)
+	- Radio MAC: C8:BE:19:5F:C8:A6
+	- 

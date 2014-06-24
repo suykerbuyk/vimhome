@@ -1,0 +1,89 @@
+%title Using nfse to manage nfs on Strata 
+
+= Overview =
+NFSE replaces mountd as the responder to NFS mount request.  Mountd treated an exports configuration file as a single entitity. Any change to the exports file required mountd a restarting of mountd to pickup the changes.  NFSE began as a rewrite of mountd that allowed an administrator to modify a single exported file system without disrupting other exports.  With FreeBSD 10 Current, nfse is replacing mountd but will primarily be used in compatibility mode as a one-for-one replacement of mountd.
+
+Whereas mountd treated the entire nfs export specification as a single entity, nfse treats a file system mount point combined with a network specification as an atomic unit with various access attributes. 
+
+Because a mount point and a network or host specification exists as a single entity, I will refer to them collectively as an NFSeShare.
+
+If more then one kind of access attribute is applied to an NFSeShare, you can think of them as being layered ontop of each other, with the last one having the consequence of over riding any previously applied attributes that might overlap.  For instance if you apply a maproot directive to an NFSeShare and then later apply a mapall directive, the mapall will obliterate the maproot directive.  If however, you apply the mapall first, and the maproot second, you end up with both sets of attributes working in tandem.  The same is true of various read/write specifiers.
+
+The problem with nfse, is not so much its grammar or syntax, but rather is very narrow view of "state" as each export specification is parsed devoid unaware of the state changes of previous directives for the NFSeShare.
+
+
+
+= Strata NFSE Deployment Strategy =
+  # Do not use static export config files.
+    While it could be argued that they allow NFS shares to function without the UI workers ever starting, they are not a feature that allows for deterministic control and manipulation of exported file systems and add more levels of "state" to maintain and translate in order to determine what is actually going on with NFSeShares.
+  # Create an object model that maintains the desired attributes for each NFSeShare
+  # Create a base object for each NFSeShare attribute with a prioritization such that when they are held within an array, they can be self sorting based on 
+
+
+= Strata NFSE Model Requirements =
+  # This is a test
+    # Test 2
+  # This is another test
+    # testing
+    # testing
+      # more
+    # Another
+  # Finished
+
+
+
+= Using nfse to manage nfs on Strata =
+%toc
+
+== What is nfse? ==
+
+Very simplisticly nfse is a replacement for the mountd daemon. Traditionally mountd was responsible for responding to remote request to mount a file system shared on the local network. It also has the bore the responsibility to configure the nfs server module via its agent, nfsd to facilitate the share.
+Where as mountd treated all export specifications as a single, static entity, nfse pairs a file system export with a network specification as a single atomic unit that can be modified on the fly without affecting other exports. 
+nfse runs as both a daemon process to service nfs mount request and as an interactive tool to administer nfs exports.  When first run, it checks to see if a daemonized process already running, and if not, it forks an instance of itself off to become the daemon.
+
+
+== nfse configuration phases ==
+
+
+== Problems with nfse ==
+There exists up to four layers of 'state' when using nfse. 
+  # The effects of the previously parsed directive(s), either from an exports file from previously issued command '-c' commands.
+  # The internal state of the daemon instance vs a user instance attempting to modify it.
+  # The state of nfsd
+  # The state of the kernel mode driver.
+
+
+== A Strata Implementation Proposal ==
+  # nfse treats a file system mount point and a network specification as a single name value pair with attributes.  
+  # Do not use export files.
+  # Create a rails model of the desired nfs export specifications.
+    - An export object is a local mount point and an associated network specification.
+      Inside nfse, a file system mount point and a network specification are combined to create a unique key value pair.  An nfs export has a 0 to N relationship with network specifications.  Each mount point/network specification pair, has a number of access attributes:
+      * Read/Write 
+      * !RootSquash/!NoRootSquash in nfse, this is handled via the map root directive.
+      * The mapping of users to a fixed local user ID.  (-mapall)
+   # NFS exports in operation:
+      * At start up, the nfs export model should populate itself from previously a saved configuration if available.
+      * We probably want the model to then issue an nfse -c flush to clear any settings loaded from export files.
+      * For each exported file system, issue an nfse -c "add fs/path -nospec". This populates the states of the various layers with each export and explicitly disables default access patterns.
+      * For each combination of exported file system and network specification, issue an 'nfse -c add [attributes] 
+== Dynamic Configuration ==
+
+
+== How to configure exports with NFSE ==
+NFSE treats a file system mount point and an IP address specification as a name value pair, an atomic entity with various attributes.  These attributes include:
+   # The re-mapping of user ID's.  
+     - mapall - forces all permitted user ID's to be converted to a fixed local user ID.
+        * By default, all user ID's with the exception of root are passed through without modification.
+        * mapall maps the root ID as well.
+     - maproot - converts user ID 0, root, to a different user ID on the exported file system
+        * Defaults to 'nobody' (UID -2, GID -2)
+        * mapall overrides a maproot directive.
+        * maproot will override the settings from a mapall directive for just the root user.  If mapall is used, maproot should be expressed second.
+   # read and write access priveleges
+     - ro makes the mount point read only, denying any attempt to write to the exported file system.
+     - rw grants read and write privelege to the IP address client for the specific mount point.
+     - Defaults to read/write.
+     - In the absense of an explicit read/write directive, setting any other attribute of a mount point/IP address enables write access.
+ 
+      

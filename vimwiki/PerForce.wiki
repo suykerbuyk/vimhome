@@ -1,0 +1,95 @@
+Notes on setting up p4:
+
+Setup an environment var so p4 can find its config
+* In .bashrc, add:  export P4CONFIG=.p4config
+* You might want to make sure your editor is set too. (export EDITOR=/usr/bin/vim)
+
+Copy the p4 binary to /usr/bin
+
+Where ever you want a checkout/client/workspace....
+* Create a file named .p4config
+* Populate the file as follows:
+*    P4USER=YOUR_USERNAME
+*    P4CLIENT=WHAT_YOU_WANT_TO_CALL_THE_WORKSPACE
+*    P4PORT=ns1.eng:1666
+
+To create the client/workspace
+* p4 client
+* - Might want to change normdir to rmdir
+* - Modify the "view" to reflect a mapping. IE:
+*   //sandbox/johns/... //learningP4/...
+*   note the ... meaning all files/dirs from here down.
+
+To find files from the repo that have been modified:
+* p4 diff -se
+* p4 changes -s pending
+
+To delete a pending change set:
+* p4 changes -s pending 
+* p4 change -d numberAsListedInPendingList
+
+To check for files that have not yet been added to the repo:
+* find . -type f | xargs p4 add -n
+* find . -type f -exec p4 add -n {} \;
+
+To wipe a local client/workspace...
+* p4 client -d WORK_SPACE_NAME
+
+Recursively add all files in a directory:
+* Unix: find . -type f -print | p4 -x - add
+* Windows: dir /b /s /a-d | p4 -x - add
+* Mac: files -f -q -r -s | p4 -x - add
+
+* p4 client -o  dumps the client to the console. 
+
+p4 integrate:
+* p4 integ //depot/products/zLine/domains/control/rpms/xen/... //johns_t61/users/johns/xen/bios-id/... <br />
+*
+
+Log of changes in branch.
+	p4 changes -l ... | less
+
+List branches.
+	p4 branch -o 
+
+Integrate source to branch for ONE change set (cherry picking).
+while in the head of SpectraBSD-stable-8, merge head in.
+	p4 integrate -b SpectraBSD-head-8 ...@517664,517664 ...@518385,@518385
+
+Resolve the differences, accept safe changes (as)
+	p4 resolve -a ...
+
+Check for unresolved files:
+	p4 resolve ...
+
+Someone changes a file in your client view that you have open:
+	p4 sync ...
+	p4 resolve ...
+
+To see outstanding changes:
+	p4 changes ...
+	p4 changes -s pending -u johns
+
+To find the current client root:
+	p4 info | grep "Client root" | cut -c 14-80
+
+
+Creating a stream client for the new build:
+	- mkdir -p p4streams/redline
+	- cd p4streams/redline
+	- .p4config
+		* P4USER=johns
+		* P4CLIENT=johns_redline
+		* P4PORT=perforce.eng:1666
+		* P4EDITOR=vi
+	- p4 client -S //redline/main
+	- p4 sync
+
+To build with the new stream, 
+	- Make sure you can ssh root@ns1.end 'ls'  without a password
+		* append your id_rsa.pub to ns1:/root/.ssh/authorized_keys
+	- From the SpectraBSD folder:
+		* ../tools/build/spectra_build -d spectrabsd_strat_9:build
+		
+Identifying line by line history of a file:
+	- p4 annotate -i //file/path/ | less

@@ -1,0 +1,17 @@
+Build Vars:
+ - $SRC - Source Tree, always pulled from a stream
+ - $OUT - Output Tree, where final build products go.
+   * world, kernel, packages, image.archive.
+   * shared between all build stages.
+ - $OBJ - Intermediate or temp tree.
+   * Where tool chains are build (poudriere, etc).
+   * Where MAKEOBJPREFIXDIR points.
+   * In ports, this is the WRKDIRPREFIX
+ - Example:
+   ($OUT,$OBJ)/pkg/
+   ($OUT,$OBJ)/pkg/poudriere_etc/_CONF_FILES_
+   ($OUT,$OBJ)/pkg/obj/build/products
+   ($OUT,$OBJ)/pkg/obj/build/destdir (output products)
+
+	
+	

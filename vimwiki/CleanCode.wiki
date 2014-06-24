@@ -1,0 +1,98 @@
+= Naming and Comments =
+== Names ==
+	- Avoid names that describe content structure
+	- Only use common acronyms that are part of the solution or the problem domain.
+	- Single char var names only allowed in short/limited scope.
+		* avoid "O" and "l"
+	- In principle, len of name should relate to scope.
+	- No hungarian notation
+		* Type info should not be reflected by name.
+	- No member prefixes
+		* m_ our_ my_, -ugly
+		* use small classes and methods
+		* Use a colorized editor to help with scope.
+	- No encoding for interfaces
+	- Adorn implementations if needed for disambiguation.
+	- Avoid Mental Mapping
+		* Clarity is king
+		* Classes and objects have noun or noun phrase names
+		* Functions and methods have ver or verb phrase names.
+		* Use named faculty method to cover overloaded constructors.
+		* Don't be "cute"
+	- One word per concept
+		* Retrieve vs Get vs Lookup vs Fetch
+		* Manager vs Controller vs Supervisor
+		* Use a consistent lexicon & document it.
+		* No puns
+		* Use solution domain
+			- CS industry standards
+			- Math terminology
+			- Pattern names
+		* Use problem domain words and phrases from subject matter
+	- Use meaniful context
+		* Use a prefix (e.g. addrFirstName)
+		* Use a class to provide context
+		* But don't add gratuitous context (program name, package name)
+	- Finally
+		* Short is better then long
+		* Review names with others
+		* Use roles in reviews
+		* Refactor till clean
+== Comments ==	
+	- Comments are, at best, a necessary evil
+	- Comments are always failures
+		* Always and never are always dangerous
+		* Lots of exceptions to this
+		* Err on the side of adding the comment unless the code can be rewritten.
+	- The principle is to write code that needs no commentary.
+	- Exceptions
+		* Legally required comments
+		* Communicate into or rationale when it isn't obvious
+		* Documenting the use of standar lib functions
+		* Warnings for future support devs
+		* !ToDos - but develop a practice and follow it.
+		* Javadoc/Doxygen for API calls
+		* Comments required by FOSS software
+	- Copyright Notices
+		* If the copyright date is listed, and you as an employee modify it without updating the copyright date, the code becomes public domain.
+	- Bad comments
+		* mumbling
+		* Redundancy
+		* Wrong or misleading
+		* Mandated comments
+		* Journal Comments
+		* Noise
+		* Author comments or attribution
+		* Commented out code
+		* Human parsing flags (comment lines used as brackets)
+		* Closing brace comments
+		* HTML in comments
+		* Arcane comments
+		* Function header comments
+		* Javadoc/Doxygen in non-public code.
+		*
+		* 	- Comments are, at best, a necessary evil
+		* 	Comments are always failures
+		*	* Always and never are always dangerous
+		*	Lots of exceptions to this
+		*	Err on the side of adding the comment unless the code can be rewritten.
+	- The principle is to write code that needs no commentary.
+	- Exceptions
+		* Legally required comments
+		* Communicate into or rationale when it isn't obvious
+		* Documenting the use of standar lib functions
+		* Warnings for future support devs
+		* !ToDos - but develop a practice and follow it.
+		* Javadoc/Doxygen for API calls
+		* Comments required by FOSS software
+	- Copyright Notices
+		* If the copyright date is listed, and you as an employee modify it without updating the copyright date, the code becomes public domain.
+	- Bad comments
+		* mumbling
+		* Redundancy
+		* Wrong or misleading
+		* Mandated comments
+		* Journal Comments
+		* Noise
+		* Author comments or attribution
+	-  

@@ -1,0 +1,81 @@
+firstwin.rb  
+	@service = Service.new({ :name = ....})
+	create_volumes
+		
+
+development/configure
+	add_storagedomain_storage
+
+/etc/redline/development/configure
+
+mount ns1:/home/johns/export /home/johns
+
+
+redline/gui/app/models has most of the funamental constructs/objects.
+
+Pool.all.each {|p| p.export}
+
+s = Service.last
+s = Service.all
+s.xen_service returns the xen config
+s.start   //starts the service.
+s.volumes //all the volumes that have been attached to the service.
+
+s.config_vol // returns the config volume.
+s.system_vol // retuns the system volume.
+s.volumes.select {|v| v.path =~ /datafile/}  //will dump all the data volumes
+
+rake doc:app //in the gui/app directory generates docs.
+
+/usr/local/bluescale/script/console
+Pool.all
+Pool.first.destroy   Pool.all.each {|p| p.destroy}
+Pool.create_700
+
+>> ActiveRecord::Base.logger = Logger.new(STDOUT)
+>> ActiveRecord::Base.logger.level = 1   
+
+
+==============================
+
+firstwin.rb  
+	@service = Service.new({ :name = ....})
+	create_volumes
+		
+
+development/configure
+	add_storagedomain_storage
+
+/etc/redline/development/configure
+
+mount ns1:/home/johns/export /home/johns
+
+
+redline/gui/app/models has most of the funamental constructs/objects.
+
+Pool.all.each {|p| p.export}
+
+s = Service.last
+s = Service.all
+s.xen_service returns the xen config
+s.start   //starts the service.
+s.volumes //all the volumes that have been attached to the service.
+
+s.config_vol // returns the config volume.
+s.system_vol // retuns the system volume.
+s.volumes.select {|v| v.path =~ /datafile/}  //will dump all the data volumes
+
+rake doc:app //in the gui/app directory generates docs.
+
+/usr/local/bluescale/script/console
+Pool.all
+Pool.first.destroy   Pool.all.each {|p| p.destroy}
+Pool.create_700
+
+>> ActiveRecord::Base.logger = Logger.new(STDOUT)
+>> ActiveRecord::Base.logger.level = 1   
+
+
+==============================
+
+

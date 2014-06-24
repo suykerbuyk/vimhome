@@ -1,0 +1,6 @@
+To get dchp to serve up static IP's...  In dhcpd.conf add a line for each host like this:
+# Assign a static IP to atlantis.linuxhelp.ca
+# host atlantis {
+#   hardware ethernet 00:45:40:10:FE:12;
+#     fixed-address 10.1.1.20;
+#     }

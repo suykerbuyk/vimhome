@@ -1,0 +1,5 @@
+To cause a box to pxe boot:
+ipmitool -H swanky-ipmi.eng.sldomain.com -U ADMIN -P ADMIN chassis bootdev pxe
+
+To reset a box:
+ipmitool -H swanky-ipmi.eng.sldomain.com -U ADMIN -P ADMIN chassis power reset

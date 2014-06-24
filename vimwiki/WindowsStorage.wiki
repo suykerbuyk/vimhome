@@ -1,0 +1,4 @@
+Windows Storage on the nTier platform
+How windows sees storage.
+What is a volume?
+

@@ -1,0 +1,49 @@
+#Setup the directory structure for the sever...
+mkdir /srv/www/htdocs/suse
+mkdir /srv/www/htdocs/suse/iso
+mkdir /srv/www/htdocs/suse/disk
+mkdir /srv/www/htdocs/suse/disk/11.3_x86_64
+
+
+#We are going to use http as the network protocol for the install,
+#so install and start apache.
+zypper in -t pattern lamp_server
+service apache2 start
+
+
+#In this case, I am mounting a host directory 'iso' that is shared
+#via the virtual box folder sharing tools.
+mount -t vboxsf iso /srv/www/htdocs/suse/iso
+
+#Now we need to install the actuall TFTP server and the YAST tool
+#to configure it.
+zypper in yast2-tftp-server tftp
+
+#create the directory the tftp will serve up
+mkdir /srv/ftpboot
+
+#Either use the yast2 GUI tool to configure the tftp server to serve up
+#/srv/ftpboot, or in /etc/inet.d/tftp with the following settings:
+#service tftp
+#{
+#        socket_type     = dgram
+#        protocol        = udp
+#        wait            = yes
+#        flags           = IPv6 IPv4
+#        user            = root
+#        server          = /usr/sbin/in.tftpd
+#        server_args     =  -s /srv/tftpboot
+#        disable         = no
+#}
+
+#install the dhcp_dns server
+zypper in -t pattern dhcp_dns_server
+
+#retire the default configuration
+mv /etc/dhcpd.conf /etc/dhcpd.conf.original
+
+#use the following file for the dhcp.conf.  Note this file uses
+#a 192.168.8.x subnet, assigning the IP address 
+# DhcpdConf
+#
+

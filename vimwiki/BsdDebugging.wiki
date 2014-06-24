@@ -1,0 +1,101 @@
+= !FreeBSD Debugging = 
+
+== Invoking the Debugger ==
+sysctl debug.kdb.enter=1
+causes immediate kdb entry.
+
+Bring up kernel debugger:
+<CR>~<CTRL-B>
+
+
+== Debbugging a hung !DomU == 
+	- ~ ctrl-b brings up debugger if you can get to the console.
+	- /etc/init.d/iptables top ;# shutsdown firewall
+	- gdbsx -a domID 64 1234  ;# sets up gdb listner on port 1234
+	- on NS1 as root cd to: 
+	- /vmpool/tinderbuild/SpectraBSD/tinderbuild/jails/8/obj/tb/7d91f381/tinderbuild/jails/8/src/sys/ZLINE
+	- kgdb kernel.debug 
+	- target remote newbie.eng:1234
+
+== Overview of FreeBSD crash dumps. ==
+
+When a system fault (panic) occurs, FreeBSD can capture the state system memory and the CPU.  This "image" can contain all the information, back traces, and instance data that would normally be available to an interactive debugger.  When enabled and a kernel panic occurs (or is emulated), FreeBSD will do a crash dump to its swap disk.  Upon a successful reboot, FreeBSD can also be configured to convert the crash data in the swap device into a proper, stand-alone compressed crash dump file.
+
+There are primarily two kinds of crash dumps.  Full crash dumps and mini-crash dumps.  Where as a full crash dump attempts to save every byte of phyisical memory along with the CPU state, a mini-crash dump only saves memory pages that had acutally been "allocated" from physical memory. Since FreeBSD 7, mini-crash dumps are the default in all kernel builds.
+
+
+== Crash Dump Configuration ==
+
+Like many aspects of a FreeBSD runtime environment, crash dumps are enabled and configured through settings in /etc/rc.conf. A system utility, "dumpon", parses rc.conf looking for a dumpdev setting
+
+	- dumpdev=off  
+		* do not create crash dumps (if created, they are output to /dev/null)
+	- dumpdev=AUTO 
+		* dumpon will use the first swap device that it finds that is large enough to contain the raw core dump.  The dumpon utility finds the swap device(s) by parsing /etc/fstab for mounted swap devices.
+	- dumpdev=/dev/daXsY 
+		* Attempts to use the raw block device path given.
+
+Its important to note that you cannot send a crash dump to a file.  It must be a raw block device.
+
+When FreeBSD reboots after a crash but before entering multi-user mode, it runs the script "savecore" it the utility "savecore" attempts checks to see if a crash dump is presesnt on any of the configured swap devices (savecore -C /dev/da?s?).  If it finds a coredump, it uses the settings in rc.conf to save the dump to a file.
+
+savecore has two settings:
+	- dumpdir
+		* which file system directory the core dump file will be saved to.
+	- savcore_flags
+		* Flags to affect compression, verbosity, and if the swap device should be "cleared" of the core dump.
+
+=== Some notes about FreeBSD startup and rc.d ===
+
+Shortly after boot, the init script calls the rc script to start up all system services.  I've found it to be quite an elegant solution to a difficult problem.  Originally implemented in NetBSD, it was ported to FreeBSD shortly afterward (circa FreeBSD 4.0).
+
+rc calls the script "rcorder /etc/rc.d/*" (or something like that).  rcorder (think run control order) looks at tags in the header of each script in the rc.d directory.  The tags describe dependencies on other services, names of services they provide, and a variety of other "conditions" for execution.  
+
+rcorder provides to the rc script, a list of every script in the rc.d folder in dependency order.  rc calls each script in rc.d in the order returned from rcorder.  Each service script in rc.d, includes rc.subr which provides common subroutines and funtionality for all rc scripts.
+
+I mention this as an explanation that for me at least was confusing at first.  For every service, there tends to be two files with the same name.  One is the binary associated with the service, the other is the script that lives in rc.d.  Of interest here, are combination of savecore and dumpon.  They exists in name in both rc.d scripts and as binaries (/sbin).
+
+
+== Configuring Strata's storage domain for crash dumps ==
+
+On our storage domains (development mode or otherwise), the rc.conf file that shows up in /etc is a non-persistent copy of the what is in /conf/base/etc/rc.conf.  You must remount the root file system in read/write mode (mount -u /) and modify this file to make a persistent change to the machine.
+
+=== Normal Storage Domain ===
+
+Modify rc.conf to include the following line:
+	- dumpdev=AUTO
+	- dumpdir=NO
+
+We do not set a dumpdir to keep savecore from even attempting to save the core dump to a local file.  By default, savecore would try to wite to /var/crash.  On the default storage domain, there is no space to write a core dump.  
+
+However, it is possible to take the Dom0 file that is used as the backing store for the storage domain to another FreeBSD box and extract the core dump from it off line (descibed below).
+	
+
+=== Development Storage Domain ===
+
+Our "development" storage domain usually has extra storage mounted as /scratch.  We can use space on /scratch as a core dump directory.
+
+	- dumpdev=AUTO
+	- dumpdir=/scratch
+	- savecore_flags="-z -v"
+
+Optionally, add the "-k" flag to savecore_flags if you do NOT want savecore to clear the swap device of the crash dump.
+
+== Simulating and testing crash dump handling ==
+
+With one of the two configurations above in place, one can easily simulate a kernel panic or simply exercise the core dump functionality.  Note that you must be at the storage domain console (xm console is fine) for this to work, you can not do this over an ssh connection!
+
+=== Simulating A Panic ===
+
+As root:
+	- sysctl debug.kdb.panic=1
+
+This will cause an immediate panic to the kernel debug prompt.  From here all normal kernel debug facilities can be exercised.  To carry on with the crash dump, enter:
+
+	- continue
+
+This causes the debugger to resume execution.  The BSD kernel should write the coredump and then reboot.
+
+=== Exercising A Coredump ===
+
+

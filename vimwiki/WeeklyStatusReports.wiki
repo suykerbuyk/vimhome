@@ -1,0 +1,742 @@
+01-FEB-2013
+CIFS Testing.  I've completed the build and setup of the Microsoft CIFS compatibility test suites.  In the midst of this, we've encountered a number of network infrastructure issues that have had to be resolved.  These have included routing between subnets, DNS, Active Directory DNS support, and a more.  While I can run the Microsoft tests between two windows machines, I've yet to be able to run them against a Strata disk/Likewise machine.  The last issue seems to be active directory credentials and active directory reverse DNS look ups.  I'll keep working it through the weekend.
+
+I modified how we create coredumps.  Now they have a date/time stamp that resembles how the rest of Strata logs are created.
+
+
+25-JAN-2013
+Lots of network trouble shooting in the lab following power outage earlier in the week.  Made a couple of modifications to how NFS exports work.  All of my previous nfse work, worked the first time once the disable nfse mountd compatible flag was moved from main to the r1.x branch.  
+Past couple of days have been spent evaluating paths to take in validating CIFS behaviors.  While we could write a couple of one off tests, I found a standard CIFS and CIFS2 test suite embedded as part of the "Microsoft Message Analyser" tool set.
+https://connect.microsoft.com/site216
+Since these are now the industry standards by which CIFs compatibility is measured, I've opted to make a best effort to go with them.  To that end, I've been assembling Win7 and Win2k8 virtual machines to host test clients and measurements.  I finished the first Win7 VM setup.
+
+
+
+
+18-JAN-2013
+Turned over my NFSE code to the GUI team.  Chris and I worked to gether to get it 'plugged' in, in the right place.  There are a few things I want to add, but right now it supports everything except subdirs (and I know how to do that now).  Its fully unit tested, and after disabling nfse_mountd_compatible in our rc.conf, should work quite well.
+
+
+04-JAN-2013
+Finishing up a Ruby library to manage NFSE on behalf of the Strata GUI. I have a real good understanding of how NFSE works internally and how it interacts with both the NFS kernel driver the rpc daemon, enough to know that fixing NFSE's parsing of exports is not possible without re-writing it and breaking compatability with a lot of legacy thing that just 'happened' to have worked with the class nfs export files.
+
+The challenge is to transform the relatively simple concepts of specifying complex export spexports into a sequence of operations that nfse won't screw up.  Unfortunately, nfse has no knowledge of the state of any export declaration except the one line it is processing.  A few examples:
+- If a no squash root is specifed before a map all, the no root squash is lost.
+- If a rw is requested for a specific user and then a read only request is made for every else, the rw state will be lost.
+- If a mapping for any security model besides 'system' is made, it must be specified after all security level 'system' request have been made.
+- If a request for exporting subdirs is made, it must be done seperate and after the user attribute mapping.
+- If a request for a specific nfs version for the export is to be declared it should be done seperate from and after the attributes and ip address specifications for the export path are made.
+
+Its taken a while to understand the idiosyncrasies of NFSE and I had several false starts with the idea of simply 'fixing' it via a rewrite centered on implementing a lexx/yacc parser.  Ultimately, this is what should be done, but in the interim, I am writing this Ruby library that presents itself as a simple(r) object for the GUI to operate upon, and it will in turn use all its known rules to generate output that gets NFSE to just do the right thing.
+
+14-DEC-2012
+I was going to send this after working the weekend towards wrapping up the issues relating the support of NFSE and dynamic NFS export configuration for Strata.  Unfortunately, Friday night while testing some stuff on my home laptop, I wiped out most of my network stack and in the subsequent crash, lost the UFS file system that was running on the machine.  By day, this weekend I helped to build the fence at Stephanie Ramsey's place, and spent my nights trying to build up a BSD current environment on my personal laptop.  This is still ongoing.
+
+My week's work with NFSE has been frustrated in not being able to find solid, consistent behaviors with dynamic updates of NFS shares.  The principle and goal of the NFSE project is on the right track, but from my experience, there is a reason why it has not been part of FreeBSD Current.  Their are still significant inconsistencies in its legacy mountd emulation and it is not yet fully capable of managing all but the simplest of NFS exports on a dynamic basis in a way that is not static.  I found it quite easy to 'break' nfse exports time and again, just by changing the order and sequence of applying modifications to shares.  Since the entire point and purpose of nfse was to be a replacement for mountd that allowed for dynamic nfs configuration changes WITHOUT dropping existing shares, this has been frustrating.  
+
+Its close, and I believe we should continue down the path of using NFSE, but our goal of being able to reliably make dynamic changes to NFS exports may prove to be problematic in all but very simple cases.
+
+
+30-NOV-2012
+This week I'm investigating the innerworkings of the nfse utility, how it interacts with the underlying nfs server, and how to best facilitate Strata administrators to configure NFS exports.  Strata administrators need to have considerable control over NFS shares, but the nfse utility and the associated three levels of export files
+16-NOV-2012
+Finished off last of the Bullseye issues, licensing and final deployment for operation in conjunction with continous test integration.
+Configured kernel to suppor lagg0 & came up with basic rc.conf template config for the GUI guys to use as a guid for link aggregation configs.
+Fixed/tested kernel dumps from panics on our boxes.  We now have useful and complete 'mini-dumps' regardless of whether its triggered from a panic, a sysctl, or the debugger.
+Currently working on a FreeBSD kernel panic when a JBOD is removed.  
+
+
+19-OCT-2012
+Back from two weeks of vacation.  Took over the work from Alan to investigate and integrate the Bullseye Code Coverage analysis tool.  It quite thoroughly instruments C/C++ code, including the entire FreeBSD kernel tree.  It does this by intercepting calls to the compiler and creating new versions of the source file where every line of code is instrumented with logging functionality.  In this way, the tool can be used to provide very detailed analysis of which code paths are exercised (particularly during tests), and which ones do not.
+
+Unfortunately, it took several days of discovery to learn the BSD build system well enough to painless integrate Bullseye.  Even under the watchful eyes of the BSD guru's, we went down several dead end efforts.   On the plus side, I think I know the BSD kernel build system as well or better then anyone else on the team.  
+
+The primary problem was the level of detachment between the makefile generators and the makefile consumers.  Bullseye requires considerable intrusion in order for it to precede calls to the real compiler and link in the instrumentation logic.  The solution I came up with this evening looks redicoulously simple (and it is), but did not become obvious till after having tried nearly every other mechanism.
+
+I'm holding off on checking it in till after I can do some test runs on a box or two, with coverage enabled and with it disabled.
+
+28-SEPT-2012
+Updated zpool tool to properly display human readable time values.  
+Investigated the high latency values we see for some root vdevs (upwards of 500ms). 
+Updated zpool Ruby gem to report to the GUI, zpool latency values.
+Helped Brian with a couple of troublesome SuperMicro boxes.
+
+
+21-SEPT-2012
+Completed full support of BIOS Raid boot support in our BSD images. Converted all mount point to using labels and all consumers of device paths within our software stack to using the new file system labels.  This gives us the ability to deploy with BIOS Raid or discrete disks - the imaging and nanobsd tools do the right thing.
+
+Fixed an issue where a system crash could leave disk image we boot in a state requiring fsck.
+
+Fully implemented from kernel to user land tools, the ability to collect zio latency information.  This gives us the ability to track precisely how long it takes for a zio data request to be serviced, from initial dispatch to a pool to physical devices and back again, with very little overhead and within the existing framework that ZFS provides.  While the tool(s) have to be further validated, it appears to have identifyed that on a two drive mirror most root level zio request take and average of 400 milliseconds to service while leaf vdevs are offering completion times that match output from gstat.  We are still investigating the source of this issue.
+
+14-SEPT-2012
+I've put the zpool io latency task on hold after working on it for the first two days of the week.  Their is still some discussion with other team member as to whether the accounting should be done against the root vdev or by summing busy time of each leaf vdev (attached to a physical device).  I'll resume this task next week and resolve an issue I found with updating the statistics while possibly in an interrupt context (not good).
+
+Over the past couple of days, I figured out what was broken with our flavor of FreeBSD that kept us from being able to use the Intel BIOS Raid on our boot devices.  Long story short, I fixed our mfsbsd image to add the correct driver support and then modified the PXE boot scripts to recognize it.  I'm about half way done updating our primary nanobsd image that our product actually runs from to support running from the raid device.
+
+
+
+07-SEPT-2012
+Primary task for this week was understanding how ZFS processes IO well enough to instrument the execution stack well enough to instrument it and record latency of zio request.  The purpose is to be able to tell the users the percentage of 'busy' time a top level vdev (pool) is experiencing and the average IO latency going through the pool.  After cross referencing what I've learned with the other BSD guys, I started working on the code Thursday and am making good progress.  I've got about another 8 hours or so before I'll be ready to start testing my kernel mode code changes.  
+
+A minor task this week was researching what we can do to make our boot devices more resilient to failure.  BSD does not currently support the BIOS Raid in our boxes.  We could create a purely software based synchronizing deamon.  We could also take over the Google Summer of Code project that attempted to get FreeBSD to boot from an EFI boot loader that suppors ZFS.  I'll be publishing a brief white paper detailing the pros, cons, and obstacles with each possible path.
+
+31-AUG-2012
+Took this Friday off to take care of some personal stuff.
+Spent a couple more days figuring a way to solve our need to cache locally (in perforce) the distribution files that are required to build the FreeBSD ports used in Strata.  Everything is relatively easy except the fact the way we have perforce configured, the "stream" that knows what ports are required is a child of the stream where they would need to be cached.  Will and I spent time exploring options and decided to differ it till next week.
+
+I'm currently working on instrumenting ZFS so we can report the device stats on pools and other "root" devices.  Presently, we can only report the performance of a direct attach device.  My goal is to be able to report the performance of a pool or the consumer ZFS file system that resides with in it.
+
+
+24-AUG-2012
+Created a feature in SpectraBSD that detects repeated crash/reboot cycles and interrupts them while signalling the GUI that the box is in an impaired state.  Presently it halts the system if it detects 3 crash dumps within 1 hour.
+
+Created a set of methods for the GUI to persists configuration options across reboots.  While running within our normal 'nanobsd' environment, most of /etc/ lives in a RAM disk that gets reconstituted every boot cycle.  The GUI now has a way to selectively capture modifications to /etc/ config files.
+
+Am currently working on a tool chain to capture the distribution files associated with our ports tree.  At the present, every SpectraBSD image build requires us to pull the associated souce code files (distribution files) from remote repositories.  As our ports tree becomes out of date with the external repositories, the distribution sources become unavailable.   This tool chain will allow us to capture both the ports tree and the distribution files that we need to build the SpectraBSD image and store it in perforce.  
+
+03-AUG-2012
+Continued performance measurement, instrumentation, and shifting to CIFS testing.
+There is not a lot of interesting detail for me to report that isn't better shown via performance graphs.  Presently we peak out at 10,000 IOPS per second under controlled but not so much contrived circumstances.  This week has involved re-running last weeks tests with TCP/IP offloading enabled for the 10Ge NIC, instrumenting the kernel layers of NFS with DTRACE, and fixing a kernel configuration issue where the network stack was being starved of "mbufs".  
+
+At the moment, I'm charactizing combinations of ZIL and CACHE device configurations in conjunction with the well understood SpecSFS testing we've been doing.  I've also set up a Samba server configuration that's ready to go for next week when we shift from NFS to CIFS.
+
+
+
+28-July-2012
+SpecSFS testing.  I figured out how to stablize the testing and eliminated all of the testing "glitches" we'd been plagued with.  SFS is very sensitive to DNS and network latency issues, both of which where problematic in our testing environment.  As I've been working through test permutations I've noticed some odd relationships with the number of concurrent NFS connections and the maximum number of achievable IOPS.  The greater the number of open connections, the lower the maximum number of IOPs would be.  At 256 connections under one configuration, our ceiling was around 8,200 IOPS.  At 128 connections with the same configuration, the ceiling went up to 9,600.  Furthermore, at 256 connections we'd max out the CPU when we hit the IOP ceiling.  At 128 connections we'd saturate the ZIL devices when we hit the IOP ceiling. 
+
+I've also been lending a hand to GUI team to figure out how to accurately report CPU temperatures.  CPU's don't report the real temperature anymore, but rather a constant number where they will into shutdown and another number that represents the number of degrees until they hit that magic shutdown temp.  I've got that stuff sorted, but each core, virtual or not, reports these values.  I'm now trying to figure out how to programatically associate cores with CPU packages and hyperthreaded "clones" of themselves. 
+
+
+
+21-July-2012
+I was off for a good part of the week with a funeral in Michigan.
+
+I'm currently working on Specsfs testing and the effect of ZIL configurations on performance. 
+
+
+
+13-JUNE-2012
+Alan and I worked on getting 1394 kernel debugging going on BSD.  Neither of us had done such a thing so it was very educational for me. However, we could not get machines to be able to communicate with the PCI-Express cards we where using.  I've some experience doing windows kernel debugging with 1394, so switched everything over to windows as a test of the hardware.  Under windows I found exactly the same issue.  Different 1394 cards are now on order.
+
+I created a set of scripts/behaviors in the NanoBSD image that makes a non-volatile partition on BSD machines as part of its first boot up sequence.  I then set things up so that all crash dumps would be saved there as well as all system logs.  Up until this point, we could not create a BSD crash dump and since we where running /var from a RAM disk, no forensic data could be saved between reboots.
+
+
+
+29-JUNE-2012
+Continued working on the NanoBSD image system. We now have a stable base image.
+
+Added user land tools and kernel drivers for IPMI on bare metal SpectraBSD.  Tested on the three target platforms that we are targeting.
+
+Assisted with NFS configuration and testing as related to the SpecSFS testing.
+
+
+
+
+22-JUNE-2012
+Worked on the new, bare metal nano-bsd image.  The "nano" image build system seems to be very straight forward, and it was good that I finally had a chance to work in this area.
+
+The Nano image build system is very tethered to both the "Tinderbox" package build system and a large "stack" of environmental assumptions on NS1. Though I was using a near identical BSD 9 machine, I never could get Tinderbox and our "SpectraBuild" tool chain to run anywhere but on NS1.  Eventually Will showed me the build process on NS1 and while it is not complicated in use, I think the most important thing I learned was that we need to make this better, simpler, and more portable.  Between Will, Justin and myself, we did get a functional image build.
+
+Lastly, today I've been working on "tweaks" (networking, etc) on the new BSD image and beginning the IPMI investigation.  Conceptually similar IPMI tools exists in FreeBSD but they are significantly different then then the ones we used on the Linux Dom0.
+
+
+
+15-JUNE-2012
+Figured out how to manipulate PV'd network adapter settings in code and within windows to mitigate the issues created by their incomplete/broken checksum off load behaviour.  Spent several days upgrading my windows service, "SpectraAgent" to impliment the needed behaviors.
+
+In between working on code for the network issues, I've also narrowed in on the PV'd disk driver issues too, including stack traces into the Citrix PV driver where the wedge/hang occurs.  Its complicated as we have no source, and the call stack transcends many layers.  
+
+The symptom shows up when using XDD to do 512K multi-threaded sequential IO on the same file.  I can trace the IO calls from user land to the kernel, from the kernel to the file system filter driver, to the NTFS driver where it gets dispatched in kernel space as an IRP (I/O Request packet).  The IRP is then dispatched into the storage stack, finding its way through the volume manager and into the SCSI class driver.  Citrix has another filter driver on the SCSI stack that redirects the IRP through the Xen rings (block front).
+
+From the point of view of NTFS, every file object has an associated file control block (FCB).  The FCB manages all the instance data associated with a file including file pointers, locks, system semaphores, and various attributes.
+
+What I see happening is that the IRP is dispatched into the storage stack and never comes back.  The NTFS driver eventually times out the request and attempts to cancel the IRP through the Citrix file system filter.  The file system filter driver never responds.  The file object becomes "stuck".  IO on other files within the same volume continue to execute as normal, but any other file operation on the file that got stuck, blocks. 
+
+I'll be putting a package together for Citrix to help them debug this.  I really enjoyed being able to work in this area.
+
+
+
+
+08-JUNE-2012
+Keith Oliver found a bug where XDD would hang while doing CIFS testing.  I've been able to reporduce it entirely within the within the Windows DomU (no networking involved) and further isolate it to 512 byte sequential r/w's.  Using the windows kernel debugger and an IRP tracking tool, I've been able to locate and isolate the single IRP (input/output request packet) in the driver stack that hangs.
+
+From what I've been able to summize from back traces, the NTFS driver dispatches a request to the SCSI storage stack.  Citrix implements their PV driver as a mini-filter driver ontop of the SCSI device driver.  The PV driver intercepts I/O and redirects it to the xen back driver on FreeBSD. At least that is how it is supposed to work.
+
+What I see is that with high IOPs and small (512 byte) transactions, something between the mini-filter driver and the Xen back driver looses count of what goes and what goes out.  I've debugged the Xen back driver on the storage domain extensively, but have found nothing to be out of place.  On the Windows side, I see the ntfs driver realize that something went wrong with the packet, it tries to cancel it, but the mini-filter never acknowledges it.  This leaves me to believe that the mini-filter is blocked waiting for a proper hand-shake with the block-front windows PV driver.
+
+At the moment, I can do a kernel break soon after detecting the blocked I/O.  Every driver/device object in Windows follows a standard template pattern and I have been examining the states reflected in those patterns to figure out which layer is out of sync. 
+
+Alan found a problem in updating STAF testing, that the Windows DomU is no longer recieving a valid IP address from the internally bridged interface.  Working together, we found that disabling UDP check-summing could work around this issue.  
+We had a similar problem while writing the FreeBSD netback driver.  Essentially what happens is that the IP packets are sent out the virtual NIC with the check sum bit set to enabled, but the checksum itself is zero, causing the the packet to eventually be rejected.  
+
+The Citrix PV drivers should NOT be reporting that they support UDP checksum off load.  We might be able to fix this in the Linux net back driver as we did with the FreeBSD net back.  Alternatively, I can add a quick fix to my Windows service (Spectra Agent), to do a one time disabling of UDP check sums for all PV'd interfaces.
+
+I have a very strong suspicion that this problem could be another symptom of the issues I've been chasing down with IPV6. 
+
+01-JUNE-2012
+
+This week (and most of Memorial day weekend) was spent tracking down issues with the Windows VM. It appears that my changes to the IPV6 settings have improved stability, but have not eliminated network problems.  There have also been a number of storage/disk hangs from the windows VM.  While we continue to make incremental improvements in the stability of the storage sub-system(s), I do not believe we are going to be able to eliminate the IPV6 issues without either getting updated PV drivers from Citrix or getting access to the source so that we can fix the underlying IPv6 packet fragmentation issue.
+
+In addition to debugging, I also put together options for MSDN licenses. In my opinion, we should try to attain Silver Microsoft OEM Partner status.  John Crowley has a detailed break down of all of the options and my recomendations.
+
+
+
+
+25-MAY-2012
+This weeks status report is breaking with my convention of bulleted task completions, as I'm using it to actually complete one of my task (documenting the Citrix PV driver issues).
+
+For Task TA2640 (Capture the IPV6 Packets kill windows networking), I've attached a wire shark trace of a "killer ipv6 packet".  It took several days of running a couple of VM's, but I finally got it.
+
+
+As for Task TA2461 ( Document the issues we are experiencing), that's kind of what I'm doing here. 
+
+Windows 2k8 R2 fundamentally changed the implementation of the network stack.  Traditionally, IPV4 & IPV6 where two separate software stacks that coexisted in parallel.  Functionally that is still 'mostly' true in 2k8 R2, but the software layers that implement them have become tightly integrated.  Microsoft has embraced a technology called Teredo Tunneling, a 6to4 method of tunneling IPV6 packets through and out of an IPV4 intranet.  A feature called DirectAccess is now fully enabled in Server 2K8, R2.  More then enabled actually, it has become part of CIFS2.0.  DirectAccess allows seamless VPN like connectivity without requiring a VPN.  Instead it relies upon a DirectAccess Sever to transparently tunnel SSL authenticated users across IPV4 networks, into and out of intranets or remote sites. 
+
+Our "problem" is that the tunneled IPV6 DNS packets, under certain, and as of yet unknown conditions, cause the Citrix network PV driver stack to get stuck/wedged.  This causes all network interfaces associated with para-virtualization to stop working. The only way to restart the network is to trigger an event that causes the drivers to unload/reload and reinitialize.
+
+Citrix has had issues with IPV6 on their drivers for about 2 years:
+http://forums.citrix.com/message.jspa?messageID=1437099
+http://forums.citrix.com/thread.jspa?threadID=294750&start=0&tstart=0
+
+
+Though it was not explicitly part of this sprint, I've created new windows VM images that works around these problems by disabling the Teredo tunneling services and explicitly disables IPV6 at the network adapter level.   I figured out how to make these changes in such a way as to make them persistent, even across a Sysprep process.  The new images are still in test, but after several days of testing, I could not break them.
+
+Task TA2636 - Track down the status of our partnership agreement.  It was renewed with very little privileges, essentially downgraded from what we have enjoyed in the past.  I am working with Matt Yahna to complete TA2637 (Collect Options for partnership renewal) to figure out the path of least resistance to our acquiring a gold partner status (or at least silver).  Presently, our biggest impediment appears to be changes in the requirements of Microsoft related revenue.  In addition to a number of new certifications, we must be able to demonstrate approximately $100K in Microsoft related licensing revenue.
+
+18-MAY-2012
+1) I've been able to demonstrate that the latent IPV6 issues with windows 2k8 r2 vm's are still present and will almost certainly cause us issues in the field.  The problem is unique to W2K8 R2 and Citrix PV drivers.  R2 had a complete rewrite of its networking stack that combined IPV6 & IPV4 into a single network layer.  Further, both IPV6 and the toredo 6to4 tunneling protocol is always enabled.
+The problem occurs when 2k8 sends out an IPV6 DNS request, tunneled inside of an IPV4 packet.  Sometimes, but not always, this causes the Citrix PV drivers to wedge and lockup.  When this happens, the only way to recover windows networking is to unload and reload the PV drivers.
+Its very hard to systematically reproduce this as there is nothing like even a 1 in 20 chance of locking the PV drivers with the IPV6 request.  Also, Windows caches its DNS information making it difficult to force windows to refresh it.  I've accumulated numerous kernel dumps and traces in and around the problem, but have not yet found the magic bullet to give to Citrix to reproduce it.
+
+2) I contributed quite a bit of time preping and assisting with the SGL box that shipped this week.
+
+3) Most of Monday was spent working on NTFS resizing strategies from within the storage domain.
+
+
+
+11-MAY-2012
+1) Created a centos VM and then converted it over to being fully paravirtualized. 
+2) Did many experiments to try to get USB 2 device pass through to work on Xen/Windows.
+	A) Citrix does not support it.
+	B) GPL drivers do kind of support it, but do not support disconnect.
+	C) SuSE Linux Enterprise 11 seems to be the only supported distro.
+	D) Attempting to rebuild Centos to support PV DomU USB device pass through.  I would like to know it actually works in our hypervisor.
+3) My conclusions regarding USB pass through, particularly in windows, is that we would be better doing some kind of tunneled USB pass through on RDP.  Even Linux rdesktop supports serving up a local storage path to a windows VM via RDP tunneling.
+4) There are a number of proprietary, but single user free RDP servers for windows that serve up RDP sessions by way of HTML 5.  This is really cool technology in that Any HTML 5 web browser could serve up a desktop experience for any of our VM's. 
+My favorite so far:
+http://www.cybelesoft.com/thinrdp/
+
+
+04-MAY-2012
+I was the last half of last week and so did not send out a status report.  This will include info from last week as well.
+
+1) Updated windows VM to the latest Citrix driver in an effort to fix the network drops.
+2) We've only had one instance of the windows networking failing on a VM since the change over.  Ken M. managed had another instance of an ipv6 look up, hanging the network stack.
+3) Researched the ipv6 issue in general and our network topography in detail.  I can't find anything wrong but disabling ipv6 in the windows VM keeps the problem from re-occurring.
+4) Wrote IP Table rules to log broken/dropped packets in the Linux Dom0 as an effort to triangulate Dom0 activity to the windows network hang.  Has not revealed any further insight.
+5) Worked at getting automatic resizing of the windows system volume to full size of the partition allocation.  Not ready to release a fix into mainline yet.
+
+
+
+20-APR-2012
+1) Created a remote debugger VM.
+2) Created a checked build of windows that allows for full symbol level debugging of the windows kernel.
+3) Created a build VM that matches the tool chain at Citrix (as best I could infer from disassembling their PV drivers).
+
+In addition I had to come up with a way to link virtual serial ports between the debugger vm (wdbger) and the vm being debugged (wdbgee)
+
+
+Attached you will find a couple of snapshots, the first is me using the debugger vm to "break into" a booting checked build of windows.  The next snap shot is of me testing a checked build of the PV drivers, complete with windows and Citrix debug symbols.
+
+In addition, I found the root cause of the windows network instability to be an ipv6 inquiry that windows makes to teredo.ipv6.microsoft.com as a tunneling mechanism over ipv4.  This query "breaks" the current Citrix PV drivers.  I am working on an update/fix for it.
+
+A wiki page was created to help others use the Debug VM's I've created.  It goes into some detail as to how to debug a windows Xen VM.
+http://wiki/bin/view/Engineering/WindowsKernelAndDriverDebugging
+
+
+13-APR-2012
+1) Created a very small/lean windows VM for Xen that is able to be a remote debugger of other windows VMs.
+2) Created a checked (debug) build of our windows VM with remote kernel debugging configured.
+3) Figured out a way to connect virtual serial ports on windows VM's together such that remote kernel debugging can be done within the same Xen host, or via the network to any other host.
+4) Spent a day debugging the latest Citrix PV drivers for windows.  May have found a bug in our version of the Xen event channel that keeps the VM from booting after PV driver install.
+5) Creating a windows development VM suitable for building kernel drivers as well as our existing user mode code.
+
+
+
+06-APR-2012
+1) Completed the BSD coredump and subsequent analysis through the Linux Dom0.
+2) Updated the ASL scripts to include the analysis of the BSD core dumps.
+3) Miscellaneous debug work on various windows issues throughout the week.
+
+30-MAR-2012
+1) Debugged a couple of windows VM issues.
+	a) What appears to be a PV driver hang. We are going to have to commit to setting up a checked build of windows and a debug setup to persue this one.
+	b) An issue eith the Emulex FC card services that causes Windows update to fire every 3 seconds.
+2) Investigated offline parsing of BSD coredumps.
+	a) using a BSD utility, "crashinfo", was able to convert the most relevant information in a core dump into a plain ascii text summary file.
+	b) Modified crashinfo to provide stack traces for every kernel thread, a memory map of kernel processes, list of threads and their states.
+
+
+23-MAR-2012
+1) Created Ruby scripts to capture from Dom0, FreeBSD crash dumps.
+2) Fixed unforseen issues with savecore in parsing FreeBSD swap devices for crash dumps.
+3) Contributed on the project to display NFS network configuration.
+4) Contributed to the effort to get 10Ge NFS running and performance numbers collected.
+
+16-MAR-2012
+1) Built and tested Intel 10GE driver for the BSD storage domain. Integrated it into the nano-bsd build process. Worked with Brian Friday night to try to get nfse running on a 700 with the Intel card.
+2) Integrating core dump captures of FreeBSD on our Linux Dom0.
+3) Continued analysis of Windows hangs/crashes. It appears we've had a regression in the storage domain/zfs centered around this past Wedneday causes logical blocks of storage as seen by windows, to shift location, probably due to a cache coherency issue in ZFS.
+4) Fixed another bug in the windows version of xdd that was causing random seeks to occasionally attempt to seek past the end of test file.
+
+
+09-MAR-2012
+1) Finished up the wiki page documenting how to affect, control, and analyse BSD crash dumps.
+2) Figured out the logical structure of BSD crash dumps as saved in the swap device.
+3) Created a "savecore" utility for linux that can examine a BSD swap device/file and capture to a local file, a compressed version of the BSD coredump.
+4) Got team consensus how to manage BSD core dumps from within BlueScale and Dom0.
+5)Currently integrated the build of the Linux "savecore" utility into the redline RPM package.
+
+02-MAR-2012
+1) We've a story in the backlog to capture FreeBSD/StorageDomain crash dumps and to make them accessable to developers now, and support technicians in the future.  My task for this sprint was to simply figure out how to enable crash dumps, explore mini-crash dumps and see if they will work for us, and to configure our storage domains to make use of them.
+2) I've accomplished all the discovery and exploratory task involved and am currently working on a wiki page for describing my findings/lessons learned (http://wiki/bin/view/Engineering/FreeBSDCoreDumps).  I'll be finishing it up this weekend.
+3) It was expected to have taken longer to get to where I'm at, so next week, I'll be working on porting the "savecore" utility to Linux so that we can extract the core dump from FreeBSD's swap disk without giving any extra storage to the StorageDomain.  
+
+24-FEB-2012
+1) Continued to troubleshoot windows VM hangs on our regression/performance tests.  We are wedging on IRP (SCSI request) going into the Citrix driver.  Not having source or a debug build of the Citrix driver there was not much more that could be infered from the Windows side.  Ken appears to have found a count on the BSD side that could be at fault.
+2) Fixed xdd source to compile with the recent BSD changes. Also fixed issues with the seek profiles that where being caused by the faulty random number generator in Win32 (BSD had similar issues that Ken addressed).
+3) On ZFS test suite work - suffered through days of storage domain crashes and the subsequent forensics.  It appears that Will's heroics this week have resolved a number of the lock related crashes while Justin and I finally found an obscure bug in BSD that was causing a kernel panic by way of a user mode sysctl call.  We'll work around the later bug until the maintainer for that module can lend guidance for us to fix it or fix it himself.
+
+
+17-FEB-2012
+1) My tasks for this sprint is/was a time boxed effort to get more of the ZFS tests running.  I spent a day and half reproducing the build environment and getting the ZFS tests to build and run on my test hardware before it was pre-empted to resolve windows hangs in conjunction with recent changes to the StorageDomain/ZFS.
+2) As of today (Friday), it appears we have windows runing reliably on the latest StorageDomain builds and with ZVOLs being used as the backing store for the data disk.
+3) Today, I've started looking into lending a hand with the WinCE kernel debugging.  We could not clone the development VMs normally used without slowing down Robert's efforts.  Presently I am recreating the VC6/CE60 dev platform on my own VM's.  Hopefully the little bit of pairing that Poli and I did was enough enable KITL on our platform.  If not, I'll have my VM ready for Saturday morning.
+
+What needs to happen if the quick hack to the CE build is not enough:
+ - Swap COM1 and COM2 such that COM2 becomes the debug print port.  This is needed to prove we can get COM2 to work for the debugger.
+ - Rebuild CE with active debugging enabled and against COM2 at boot up - this is not the default and has not been enabled for some time, if at all.  On boot, if all is "working" an announce string will be output on COM2, allowing for the debugger to attach.
+
+
+
+10-FEB-2012
+1) Studied and analysed a number of file system exercising tools available to FreeBSD, including: fsx, fsstress, fsstress2, and pjdfstess.  Since none of them have any documentation, it studying the source code was about the only way to figure out what they did, how they did it, and how to construct test scenarios.
+2) Settled on using fsx and fsstress, and possibly pjdfstest if I can come up with an installer for it by Monday morning.
+3) Spent the last 2 and half days, trying to build the StorageDomain image on my own build systems in order to test my integration of the chosen test tools.  In my opinion, while the StorageDomain image build "works" on NS1, it is not a process that is reproducable on another machine without knowing the multitude of "tricks.  I'd like to see a task (assigned to me if need be), to document how to recreate a StorageDomain image build environment.
+
+
+27-JAN-2012
+1) Built from scratch new Citrix PV based Windows DomU to work with the new Xen 4.1.  Included every update released by Microsoft, Storage Server 2k8 r2 SP1 and all of its patches.
+2) Came up with fixes in XenStore that "broke" Citrix 
+3) Released now Windows RPM
+4) Figured out a way to support the attachment and removal of CDROM images from a running windows VM.  We've had now way to support this required feature.
+5) Responded to community feedback regarding the Netback driver Alan Sommers and I wrote.
+
+
+06-JAN-2012
+Alan Sommers and I continued our paired development work FreeBSD netback driver.
+1) Completed unit tests for the (now) required software checksumming of IP, TCP, and UDP packets & headers.
+2) Implemented software checksumming feature for IP, TCP, & UDP packets.
+3) Added support for other then default MTU sized packets. 
+4) Found bug in FreeBSD kernel code in the sscanf parser.  The "bug" was related to C99 format specifiers being used while only C90 syntax had been implemented.  This resulted in over running our stack on a XenStore parsing function.  Fixed the bug by adding support for 'hh' and 'll' specifiers.
+5) Completed Netback "disconnect" functionality
+6) Tested NetBack against Windows Citrix and SuSE PV domains. We continue to find and resolve issues.  Currently, Windows SuSE domains work but not Windows Citrix.`
+7) Still need to create a viable full DomU SuSE domain to test our FreeBSD netback driver against.
+
+
+30-DEC-2011
+1) Alan Sommers and I completed the recieve side of FreeBSD netback driver.
+2) Fixed several bugs from last week related to how xnb_recv was handling buffers.
+3) We can now communicate between FreeBSD domains via the netback driver.  
+4) We do not support bridge configurations due to the way the FreeBSD network stack expects check sums to be complete when packets reach the bridge interface. This is different from how Linux deals with check sums and reflects a flaw in the design of Xen network drivers.  Xen ALWAYS assumes/declares hardware check summing to be available and enabled.  In the context of of interconnected domains this is not a real issue, but with a brideged interface recieving packets from a another domain, results in packets being sent out the physical interface with no checksums.
+
+The fix for this will be for us to detect the kind of network traffic passing through netback, and to emulate the hardware features of calculating all the various check sums.
+
+  
+
+16-DEC-2011
+1) Alan Somers and I completed the transmit side of a FreeBSD netback driver. We hope to make significant progress on the receive side tomorrow. 
+
+
+09-DEC-2011
+1) Pairing with Alan Somers, we've created the framework of a FreeBSD netback driver.  We've been writing unit tests and then creating the functionality to support them, currently up to the point of being able to process Ethernet frames from a netfront driver and que them up for native network handling.
+2) Wrote functional network test scripts for Linux and Windows to test the FreeBSD net back driver Alan and I are working on.
+3) Working with Keith on the remaing issues of the Intel Quad GigE cards on native Win2k8 Bravo boxes.  It appears that Intel has a problem with all the MSI-X interrupts it uses (20). We first saw this under Xen, but where able to work around it by reconfiguring pci pass through.  Unfortunately, no similar fix has been found when running on bare metal.
+
+
+
+02-DEC-2011
+1) Finsihed creating a fully slipstreamed version of Win2k8 R2 SP1 with integrated storage server features.
+2) Learning how Netback drivers work in Xen with the goal of writing one for Xen
+3) Learned how to modify and rebuild HVM FreeBSD kernels.
+3) Created a NetBSD VM to study how it's netback features work.
+4) Working on instrumenting the Linux Netback driver to trace the states that it goes through in servicing a netfront.
+
+
+
+18-NOV-2011
+1) Compiled the data from the bench mark testing of 6G SAS hardware, with and without ZFS.  This answered a number of questions that I've had regarding path topology and soft raid overhead.  RaidZ2 with 8 data drives and 2 parity drives per blade, times 6 blades delivers the best overall numbers when run in parallel under most situations - if they are run in parrallel.  Since ZFS can't stripe pools, it still bother's me as to how we are going to get maximum throughput on large disk arrays.  
+
+2) I have been researching L2ARC, ARC and ZFS caching in general.  I hope that as a minimum I have sparked some rethinking about assumptions for the work ahead.  In my opinion, our groups collective reasoning has been focused on write agregation.  While we where doing a post-mortem of PPL at a recent sprint review, someone countered our groups dismissal of all the small writes windows does as a unique problem. The counter point was that every raid vendor on the planet has to solve this problem - native physical cluster sizes are almost always bigger then logical cluster size presented to a client consumer.  Then I started imploring as to how we where going to handle small reads, interspersed with small writes - write aggregation falls apart as soon as you have to do a read-modify-write style merge.
+
+I think we are on the right track.  But I am still troubled by the raw usage patterns that I observed at our beta sites.  A lot of time and effort has gone into making ZFS's native record size stuff work at a comparable level to other file systems, but not a lot of work has gone into make ZFS record size limitations "fit" into real world applications.  
+
+We've noticed the performance problems with zvols vs zfs.  The reason why became obvious this past week.  zVols do not benefit from any ARC/L2ARC caching.  They are raw, native zpool records - by default 128K in size.  
+The SSD guys have been working in this problem domain for at least 5 years.  The 4K sector disk drive guys with ARE the past 2.  With Ken's invalulable help, I built a CAM block storage array that presented itself as 512 byte, 1K, 2K, all the way up to 64K logical sector sizes, and tested where windows breaks.  Answer - 4K on data volumes, 512 byte sectors on system volumes (I had a few apps that would run on 8K REAL clusters).
+
+My dilema at the moment is wether to push the group towards naked zvols or not, and to adopt/invent a generic caching lba remapping algorithm on top of zvols - the same way every SSD vendor is now doing.  Fixing the innards of ZFS to serve up its native record sizes better is "neat".  Without a lot of foresight, it will still suck rocks when the I/O comes down in burst of mixed 512 byte (or 4K) reads and writes.
+
+
+
+11-NOV-2011
+1) Completing a very extensive benchmarking test on sequential ZFS v28 performance, on our latest hardware and software.
+  - Am not seeing the performance regression between Raidz1 and Raidz1 as reported by the Lawrence Livermore porting project.
+  - I am finding that Raidz2 & Raidz3 are 'almost' free in terms of throughput and CPU if you are using any parity at all.
+  - Pools consume CPU - not drives.  ZFS favors large deep pools rather then lots of smaller ones.  On our hardware, there is a nice 'sweet' spot at 16 data drives, 3 parity, 1 spare (two blades).
+2) I figured out how to slip stream service packs and updates into a windows install image.  This skips the nonsense of WinPE, OPK/AIK, etc.  It allows me to make a windows install image that has never been resealed, with all the relevant updates and service packs installed AND the upgrade to our version of storage server.  This will save me days of time in the future when we need to change the windows image on our VM's.
+3) Unfortunately, we (Keith Oliver & I) have had a hell of time getting windows 2k8 SP1 to install on nTier 700 bare metal at all.  There is a driver that is hanging after the second reboot, with no logs, and no clues as to what is wedged where.  I am putting together a debug version of windows for testing on Monday.
+
+
+
+28-OCT-2011
+1) Finished writing tool to probe windows storage drivers to collect how the windows file system sees physical sector size.
+2) Tested Ken's ctl LUN targets of various physical sector sizes with the tool above and windows in general.  Found out that windows can not use anything but 512 byte sector devices for system volumes.  Also discovered that NTFS does not work reliably on anything larger then 4K - and 4K can be problematic.
+3) The above experiments kind of prove a couple prove a couple of things.  First, I can't "fix" our COW faults by reporting larger then 4K physical sector sizes up through windows via a pass through driver.  Second, the best long term solution is a file system driver implimented on top file system pass through.
+4) Spent time testing Justin's xen back end driver fixes for the Citrix PV drivers.  
+5) Completed a refactor of my diskID tool (used to help in testing the above).
+6) Completed CIFS performance testing - random read/write performance is very poor, mostly because of COW related faults.
+
+21-OCT-2011
+1) Finished isolating service create functions and friends from the windows create routines so that they could be shared with any "service" create (in particular, FC create).
+2) Continuing investigation of what we can do to make windows respect disk sector boundaries.
+3) Creating a tool that probes windows port drivers to determine what they actually see regarding physical sector sizes and how windows changes its NTFS behavior in response to that information.
+
+
+14-OCT-2011
+1) Worked on isolating the windows "service" create routines such that a windowsVM is not automatically created, but rather can be created from the bluescale UI (Chris R.).  Separating the service create code from the Dom0 init routines was a prerequisite to being able to create a CIFS/NFS service instead of a windows service.
+
+2) Did extensive performance analysis on the Pre-Payed legal box.  We've done everything right in terms of laying out the NTFS file system and the partitions but PPL was still experience a severe performance penalty due to copy-on-write faults in ZFS.  
+
+What I found is that while "normal" file IO respects NTFS cluster boundaries, memory mapped file IO does not, most critically, the swap file does not.  The PPL box had a 18G swap file (that windows itself created) on the same data drive that was the destination for backups.  Further, the backup software used memory mapped files for nearly all of its transactions.   The data flow I observed was that backup data was flowing across the network to a temporary file that used the pagefile (swap) as its backing store, when the transfer was complete, it would then be moved, again via memory mapped files to its final destination.  This resulted in up to 3 4K file transactions into the same storage pool for each 4K of backup data stored, and each one of those 4K transactions could cause a copy on write fault within ZFS.
+
+I did testing with passing through a RAM disk from Dom0 to host the windows page file and found/tested a bunch of settings within the windows memory manager.  I could not find a work around for all the 4K writes to the final backup storage but I did reduce them by what appears to be about 30%.  Via WebEx I applied the changes to one of two PPL boxes, while leaving the other as a "control" test case.  Ultimately, we are not going to be able to fix this problem (which will also affect block storage services), until we fix the ZFS COW issues.  
+
+3) Worked with Alan to deploy a STAX/STAF test case for windows.  I had previously put together a set of scripts in the windows image that "knew" how to pull in the STAX/STAF executables.  This week and with Alans infrastructure work, we where able to get them to install real test.  We've still got a bit more clean up and need to generate a better suite of test cases.
+
+4) Did another training session with the SE's covering nTier 700i hardware layout and differences from V1.
+
+
+30-SEP-2011
+1) Rebuilt the machine named "drokki" with the new 6gb SAS expanders and blades.  Regression tested most aspects of SES and data paths on the hardware finding only issues with how our zfs_worker daemon in FreeBSD relays its results.  Data transfer speeds to disk where about 80% faster then with 3gb hardware without notable issues.
+2) Worked on resolving the issue of windows disapearing under heavy I/O loads.  Found the storage domain deadlocked and wedge on reference counted handle that has an implementation issue that allows for a situation where a defered destructor (after last close), can be interupted by a new open, causing a kernel panic that drops the StorageDomain down to a debug prompt (effecively killing windows).  The reported issues with windows is a symptom of the StorageDomain getting wedged.
+3) Worked with Justin on the UK beta unit to resolve regression test with hardware, from windows on down.  Learned a lot about the Spectra "invented" hardware and interdependencies.  We developed new testing methods to identify poorly performing drives (as a result of factory firmware setting inconsistencies), we developed ways to fix that and make drive performance uniform.   We also developed another top level debugging sequence for blade issues as we had one blade slot that was wedged with ack/nack errors.  With a bit of training from Charley Rang, and Scott Bacom, we also learned a lot about the SAS data paths, and ultimately with the help of Julius Stoakes in DVT where able to fix every issue we could find with the UK beta box.   Great people, an amazing team.
+4) I continue my efforts at home and on the side to get us to an AIK based solution to windows image creation.  The OPK was obsoleted with Server 2K8 R2, it takes me 3 days to manually recreate our image and I consider that to be a "broken" process. Its not a task that in the agile sense, but going to redouble my efforts this weekend to make this anxiety go away.  We need to be able to turn Storage Server 2008 R2 images in hours, not days. There are simply too many dynamics that we've not yet worked through to allow the current process to continue.
+5) Coallased all the over view training for support, and inspite of my tendency to talk too fast, delivered a presentation that was descibed by support as "the best they'd ever seen".  
+
+
+16-SEP-2011
+1) Worked on windows network config failure.  Turned out to be a Dom0 issue in the .15 release.
+2) Continue debugging the QLogic PCI pass through issues.  Justin seems to have found the fixes or work arounds in QEMU/Dom0 to make things work better.
+3) Documentation for Windows Storage management.
+4) Investigated better ways to manage the xen internal network, both to protect DomU's from outside networks and to keep it from interfering with them.  We need to change it from a bridged configuration to a internal only config.
+5) FINALLY got MSDN subscriber access to checked builds of windows.  MSDN really put Debbie through the ringer in trying to get my account with Spectra active.
+6) Started testing Win2K8 R2 with integrated Service Pack 1.  Not only is the install foot print 3 Gigs smaller then anything I could trim back from an upgraded image (important for manufacturing), but it appears to run faster under Xen.  No idea why there is a speed difference.
+7) Now that I have MSDN, studying up on image deployment techniques for 2K8 R2.  The old OPK stuff no longer works (no wonder I was having such a hard time last time I looked into it).  In my spare time, I am trying both the AIK methods that are recommend along with the 'new and improved' MST methods that Microsoft is now deploying.  Cycle times for these test and experiments are HUGE, so I'm keeping it as a background project.   However, in 25 days I'll either have to deploy a new image or development will have to start activating the version of windows we have now.  Its my hope that I'll be ready with a much more pain free windows system image creation process before then.
+
+09-SEP-2011
+1) Debugging why PCI function pass through is irratic with the QLogic card.
+2) Working on documentation for managing storage in a windows domain.
+
+
+
+02-SEP-2011
+* Am takin Friday off, so this is going out a day early.
+1) Figured out the windows instability issues DVT had been experiencing as being caused by the QLogic card.
+2) Found and tested a fix for Xen, that expanded the number of MSI-X tables from 32 to 256.   This stabalized windows.
+3) Spent most of the rest of the week, trying to figure what combinations of QLogic cards worked, what combinations caused windows segfaults, and what/why Windows was seg faulting.  With a single card (regardless of hardware revision), the Qlogic drivers and utilities would segfault on memory mapped port IO of the card.  With two cards installed it does not.  Have tracked most of this down to a PCI pass through mapping issue with QEMU & Xen, but do not yet have a fix.   Working with Justin to get a better understanding of how the stuff in the "basement" works.
+4) Updated the windows system disk image to have a Spectra OEM logo that did not suffer from the jaggies of the original one.
+
+
+26-AUG-2011
+1) Debugging and quatifying of issues this week.
+2) Been trying to track down source of storage domain lock ups on the hardware I've been using.  Found it to be the same SMP TBL shootdown symptom that was seen less frequently on convential 700 boxes.  Justin has taken over this.
+3) Attempting to reproduce some of the windows networking issues DVT has seen on the 700i.  I've developed a number of test suites that can stress test most IO capabilities of a windows domU, including ethernet, fiber, and disk IO.  Running these test, I have not seen any issues except CPU scheduling from Xen (annoying, but not a source of great concern).  I've found that IOZONE uses both the cygwin.dll and internal localhost loopback sockets to do IPC to coordinate the testing.  This has always been unreliable on windows.  The IOZONE test code has not been touched since 2006.  I'm inclined to think its test compatability issue with 64 bit Win2k8 R2.
+4) Minor updates to the Windows add-on driver CD.
+
+
+
+19-AUG-2011
+1) With some mentorship from Will, added methods to the Spectra Ruby Gem for Xen, that can attach and detach ISO storage to and from a Windows VM.  However, there appears to be a mismatch in the Novell PV drivers and our Xen hypervisor when registering media arrival.  Considerable time has been spent investigating this bug.
+2) Created a windows driver CD containing all the relevant language and driver files for Storage Server 2008.
+3) Wrote Ruby module to manage ISO media for a DomU.
+
+
+12-AUG-2011
+1) Completed new build of Windows 'Storage Server' 2008 R2, SP1 including all service packs except those related to IE9.  There is a bug in IE9 and the component services management snap-ins that break GUI management tools.  Microsoft has no plans to release a general fix before SP2.
+2) Testing of the new windows vm reveals the following performance numbers in SiSoft Sandra's file system level tests (standard windows benchmark).
+
+	Buffered Read:    309 MB/s
+	Sequential Read:  246 MB/s
+	Random Read:       95 MB/s
+	Buffered Write    135 MB/s
+	Random Write:     174 MB/s
+	Effective Seek Time: 6.46 ms
+
+These numbers indicate that I hit the sweet spots in the layout of the NTFS file system.
+
+3) Spent most of Thursday working through bugs in our most recent Kiwi/System image builds.  A bug introduced with some recent changes to the image build resulted in the Dom0 being created with the wrong flavor of the Xen hypervisor, overcoming that, found a bug that Dom0 was being starved of memory.
+4) Currently investigating how to dynamically add and remove cdrom/ISO image files from windows.  The intent is to make it possible from the Bluescale UI to mount cd images to a running windows service, install drivers, applications, or updates and then to be able to unmount it again.  
+
+3) 
+05-AUG-2011
+1) Added more unit test to Windows Service Agent, fixed a minor bug.
+2) Cleaned up and clarified written procedures to create properly aligned NTFS volumes from a windows command line.  
+3) 700i Document review - mostly just windows related clarifications.
+4) "Discovered" by way of document review that our version of windows is not the appropriate one!  
+5) Tracked down from our MS vendor, the modules needed to create a Windows Storage Server.  They are not directly available from microsoft, and Storage Server does not exists as a stand alone product.  I got it all sorted now.
+6) While I'm rebuilding the windows image 'one more time', I took the time to figure out how to create properly a properly aligned NTFS file system that windows will install too.  This turned out to be a non-trivial task, as windows is arbitrarily particular and has some serious limitations in what it will use as a system disk.
+
+
+29-JULY-2011
+1) Integrated into the storage domain the ability to NTFS format and prep windows volumes with all the alignment constraints of ZFS.
+2) Investigated Bonjour/Avahi compatible, Zeroconfig implimentations for windows.  The windows Service agent needs to always be able to find Dom0, it had been "hardwired" to 10.0.0.100, and IP address that we WILL eventually collide with.  While I was able to build the apple mDNSResponder from source and use it to interop with services on the network, it appears that mulit-cast DNS look up does not work.  Windows has a similar but different technology.
+3) With the above, I refactored the Windows Service Agent, to use registry settings for all of its many options.  I think it turned out to be a rather clever design.  Changing the one key "UseDefaults" to a value of zero, will cause all the other settings to appear.
+4) While I was in the Spectra Service Agent, added the ability to localize all the user visible strings, and "brand" all the OEM aspects of it.
+5) Also put in a unit test framework and all the test for the most recent changes.  Will work at back filling in the rest this weekend.
+ 
+
+22-JULY-2011
+1) About half of the time this week was spent in overcoming bugs and issues in both the storage domain and how we create the windows domain within it. We really need to get the automated final Kiwi image test back in place!
+2) Created Ruby module used to create GPT disk image files in the storage domain, with the required 64K alignment, preformatted to NTFS also with 64K aligned sectors.
+
+
+
+15-JULY-2011
+1) Figured out how to do NTFS file system fixe up and alignment from within a sysprep callable scripts.
+2) Fixed previous sysprep image errors.
+3) Added Spectra Branding to sysprep process.
+4) Many, many, many hours of windows image test/tweak/build/test 
+
+08-JULY-2011
+1) Created Ruby module to mine out DMI data from motherboard.  This will allow manufacturing to check configurations.
+2) Ran into a nasty bug in Internet Explorer 9 that caused me to spend another day on the windows VM image.
+3) Met with manufacturing to understand what it is exactly they need.
+4) Held a meeting with our team to figure out how to best server the needs of manufacturing.  Decided to scrap the bootable USB stick, and instead leverage the existing infrastructure in Dom0.  
+5) Wrote up and circulated a proposal for manufacturing, Chris and I are working on the code to implement it.
+6) Currently working on another update to the windows image to fix a bug that was discovered after it was deployed.
+
+01-JULY-2011
+1) Finished YAML generating code in the windows service.
+2) Finished C-Redis integration into the windows service.
+3) Completed all other parts of the windows service, tested round tripping data through redis.
+4) Did a lot of work on getting the build environment for windows service in a state that I can commit it to perforce, not quite there yet (not in the critical path of anything).
+5) Built initial live linux USB stick to do manufacturing test of nTier 700i.  Developed a plan full fill the requirements of manufacturing as they have been shared to date.
+6) Creating a new Win2k8 VM that incorporates all of the latest microsoft update, the windows service agent, the latest PV drivers.  It has literally taken days of monitoring, nudging to get all the updates to Win2k8r2 to complete without error, while keeping the disk foot print something sane.  Just about to reseal.
+
+
+24-JUNE-2011
+1) Created Ruby module that can parse disk images for unique signatures.
+2) Got group concensus on YAML format for windows disk storage mapping.
+3) Finished integrating CRedis into windows service agent.
+4) Started integrating yaml-cpp into windows service - may not need to complete.
+5) The YAML scheme that we're going with, required an extensive refactor of the discovery code in the windows service agent. 
+6) Still working on the YAML report generation inside the windows service.
+
+
+17-JUNE-2011
+1) Finished windows service "disk" agent.
+2) Can now parse PC based partition internals for both MBR and GPT disks, walk the partition tables for both and validate.
+3) Can retrieve the unique disk signatures of both MBR and GPT disk, as well as the UUID's of mapped NTFS partitions.
+4) Can report "events" to the windows event logging system.
+5) Cleanly installs, starts, stops, and uninstalls using no more then the service executable itself.
+6) Preliminary work started on integrating "CRedis" into the framework.
+7) Identified basic scheme that will be needed to report to Dom0, the disk signatures as seen within windows and their corresponding mount points.
+8) Started on a ruby based equivalent parser of disk images that can be used in the storage domain to coorelate disk identifiers as seen by windows agent with what can be discovered by the backing file storage for them.
+
+
+10-JUNE-2011
+1) Continuing work on QT based windows service agent for tracking disk volumes.
+2) The service can start, stop, install, and uninstall. 
+3) Working on code that parses MBR/GPT for the disk serial numbers.
+
+
+
+03-JUNE-2011
+1) Finished off the windows WMI experiments and pretty much proved two fatal failings in use Open Pegaus WMI mapper service.  First, there is next to no block device attributes that WMI can see that are guaranteed to remain constant as the block device (blade) is moved and/or reinserted.  Second, the WMI data the WMI mapper sees, is "stale", its only refreshed when the service starts up.  This means that any data we might mine from it will be stale untill the windows VM is rebooted.
+2) Got team approval to write a windows service to replace the WMI mapper functionality with native windows code/service.  
+3) Built a new development environment including a Windows 2008 R2 VM, visual studio 2010, with all related service packs.  
+4) Pulled QT from GIT repos and have now built x86 and x64 static link libraries, still working on the dynamic link versions (lower priority).  Convention is to prefer shared libriaries, but in my experience, static linking on one off OEM provided binaries often produce far fewer defect reports in the field.
+5) Continuing to explore the QT Service code base, was hoping to start building a basic service tonight, but still not feeling quite up to it after todays surgery.  Hopefully tomorrow.
+
+
+
+
+27-MAY-2011
+Core task for this week was in being able to corelate windows volumes to blade storage, to that end:
+1) I was able to get WMI Mapper up and running and demonstrate Dom0 Queries of Windows WMI/CIM properties.
+2) Have script code that can retrieve NTFS volume guids from a running windows DomU.
+3) Was able to prove, that there is no way to see past the PV drivers in windows to gain any further insight as to what the backing storage was for a windows volume.  Therefore I came to the conclusion that the best chance at being able to associate windows volumes with blade storage was the NTFS volume GUIDS.  Storage domain can see that if they mount the blade storage image as read only, loop back mount the NTFS partiton, and then use ntfsprogs to "look inside" the NTFS file system.  
+4) Still working on the Storage domain side of NTFS progs.  Got them installed in our image, still working on a simple loop back mount method.
+5) Updated the Win2k8 DomU image, but struggling to get the service accounts/security/dcom settings to survive a sysprep/reseal.
+6) Put together a Spectra provided lap top with SuSE 11.4 and windows VM's to replace the personal thinkpad I'd ben using for the past year (and is literally falling apart now!).  Thank you Spectra!
+7) In other news - last week I was on a much needed vacation, after finally putting behind me a failed marriage of 19 years.  I apologize to my associates and superiors if my productivity was less then "rock star" for the past couple of weeks.  No where to go but up now!
+
+ 
+06-MAY-2011
+1) Fixed mouse tracking issue with VNC'd windows sessions.
+2) Spent way too much time trying to get to the point of having a working system. Unfortunately this past week had a lot of stuff in flux with the storage domain and the service control code that had consequences on those of thus that had to rebuild from images.
+3) Currently working on being able to remotely (from Dom0) CIM data sources in the running windows service.
+4) The work on a RUBY module for NTFS partition management has been put on hold.
+
+29-APR-2011
+1) Released an updated, syspreped Win2k8 RPM and integrated it into the image build.
+2) Fixed Windows device manager problem with bad network devices showing up.
+3) Added an init step to increase the system disk image size for windows to 100G.
+4) Working on understanding blade management code to integrate blades into windows.
+5) Working on a RUBY module to manage NTFS partitions inside disk images.
+
+22-APR-2011
+1) Updated Windows Server 2003 OPK tool chain for what was going to be n700i
+2) Finished off work on BIOS emulation for both W2K3 & W2K8 licensing.
+3) Tested, many, many OEM BIOS keys.
+4) Created new Windows Server 2008 R2 image for testing.
+5) Working on creating a new, sysprep'd RPM.
+
+08-APR-2011
+1) Fixed a bug in my understanding/implementation of ACPI SLIC bios tables. We now have fully compliant and tested Win2k8 volume license bios extension data.
+2) Have demonstrated that I can transform our VM into what windows believes is a fully licensed Acer laptop.
+3) Have discovered a missing data field in the SMBIOS table for Win2k3 licensing, working on add it now.
+4) Reviewing manufacturing documentation to add a process for manual activation of windows licenses. 
+
+01-APR-2011
+1) Further modified hvmloader to implement ACPI BIOS extensions for Win2k8 style style volume licensing.
+2) Implementation includes support for SLIC version 2.0 (Vista/W2K8R1), 2.1 (Win7/W2K8R2), as well as version 1.0 (WinXP/W2k3).
+3) Currently implementing a test frame work to demonstrate the use of a working SLIC key.
+
+25-MAR-2011
+1) Created custom hvmloader for Xen that contained Spectra branded BIOS identifiers which should be appropriate for Win2k3
+2) Came to understand how Win2k8 platforms support OEM volume licensing with an ACPI BIOS extension which embeds licensing certificates.
+3) Met with bsquare to understand the software side of OEM volume licensing.
+4) Currently prototyping ACPI bios extension supporting Win2k8 volume licensing.
+
+18-MAR-2011
+1) Ported Xen 4.1 features to our Xen 4.0 source tree that allows for SMBIOS data to be configured by the hvm loader.  Being able to preload custom SMBIOS ID data is a prerequisite to bein able to activate windows VM's with an OEM license.
+2) Worked with DVT team on a series of issues with their box.  Most interesting/critical is the PCI Bus error that Ken Merry has been working, manifest itself in a different way (windows VM startup). Analysis proved that we have a PCI config space issue that is confusing PCI bus masters hardware, that is passed through to a DomU.  
+3) Fixed an issue with our Kiwi system image creation process that left us with a boot partition too small to update the Dom0 kernel on the 700i.
+4) Currently investigating working to figure out the correct SMBIOS data strings to "fool" windows into believing its running on a real V1 700.
+
+
+11-MAR-2011
+1) Worked with Keith Oliver And Tom to understand how our OPK based system of building Win2K3 releases used to work.  The nature of the deep OEM branding we have, and how to strip out the drivers that conflict with Xen.
+2) Built a OPK/WinPE transportable environment, that now lives in Perforce, with capable of producing a Win2K3 image with network drivers pre-installed, along with the corresponding WinPE image needed to boot strap it.
+3) Assisted Keith Oliver in quantifying a customer performance issue being experienced on existing nTier products involving large, single file back up sets to NTFS volumes.  Provided a series of NTFS and VMM optimizations that had little over all effect.  Developed a test that proved with a high degree of certainty, that the problem is an artifact of how NTFS handles its meta-data (MFT) with very large, monolithic files.
+4) Built a tool that runs under windows that can harvest all SMBIOS ID data from within a running windows instance.  This tool is meant to cross check/test our efforts to insert BIOS ID data strings into the HVM/Xen layer for windows, allowing us to continue to use our OEM volume license keys for activation.
+5) Currently going through Xen/QEMU/Bochs source code to figure out how QEMU is currently setting BIOS identification for HVM guest such as windows.
+
+
+25-FEB-2011
+1) Investigated RAID configurations for system spindles on 700i
+ - Soft/mother board raid support was dropped from the 2.26 series of Linux kernels (dmraid). Not worth porting forward to our kernel.
+2) Created a secondary repository of compressed, 700i bootstrap system images. Images are now small enough to fit on a 4GB USB stick.  Intended to be used as "last known good" configuration repository.
+3) Updated PXE boot system to include a menued selection system, added support for extracting the highly compressed system images.
+4) Created several variations of bootable USB sticks capable of boot straping/paving over a 700i system image.  Could not unify PXE and USB boot systems.
+
+
+11-FEB-2011
+Removing obstacles from being able to boot from bare metal to running windows services
+1) Wrote SES enumerator for drives visible to FreeBSD.
+2) Worked with Will A. to insert a script in the FreeBSD boot sequence to create the VMPOOL.
+3) Worked with Justin G. to fix the service dependency chain in FreeBSD fixing the timing of when zfs_worker reported ready.
+4) Rewrote the windows RPM's to package the Windows VM into a much smaller package.
+5) Wrote a dom0 Linux service to create the windows VM, one and only one time, using Bluescale scripts.
+6) Investigating BIOS Raid 1 to simplify Disk image deploy ment and make the product more robust.
+
+
+
+28-JAN-2010
+Worked at removing obstacles to getting 700i box to boot straight thru to a running windows VM
+1) Storage Domain (required) was not being created on 700i
+     Xen PCI pass through of LSI card to storage domain was not working - fixed.
+2) No ZFS storage pool is created with storage domain first boot.
+     On going - required the development of a ses drive enumerator.
+3) Working on problem wiom PXE boot,
+     imaging, Dom0 first boot, Storage Domain first boot, and finally,
+     first launch of the windows VM.
+4) Created detailed process flow for initial 700i bring up, from PXE boot,
+    imaging, Dom0 first boot, Storage Domain first boot, and finally,
+    first launch of the windows VM.
+
+14-JAN-2011
+1) Windows Server 2003 packaged as tarballs and SPEC files in perforce
+2) Added cruise build scripts to build Win2K3 RPMS.
+3) Supported testing of ZFS conifgurations with windows (several ad-hoc issues)
+4) Worked with Will & Chris to get kiwi imaging working through a first boot.
+5) Worked to optimize windows system disk storage - identified issues with QEMU boot-strap.
+
+24-SEP-2010
+1) Setup network boot system that allows for nearly  hands off set up
+   and installation of Z-Line, and other operating systems.
+2) Built an RPM of the Windows virtual machine disk images.  Th28is presented
+   a challenge as the RPM container does not allow for files greater then 2GB.
+3) Built full paravirtualized SuSE VM for cross compiling the V2 nTier GUI
+   with a working build of crosstools-ng.
+4) Spent a couple of days understanding cross compiling, x86 to arm.
+5) Spent a day understanding Ed's Bluescale source's in anticipation
+   of needing to modify it to create the new version of the windows service.
+
+
+10-SEP-2010
+1) Slip streamed our repositories for installing the zLine software platform
+   into a SUSE net boot CD, converted that to a bootable USB key with 
+   multi-boot selection including a "live" KDE based suse distro.  
+   Unfortunately, Intel server motherboards have very limited USB boot
+   capability (must emulate 1 storage device, such as a single CD rom image).
+2) Configured and installed RMM3 management board to debug boot issues with
+   new AIC chassis.  Issue seems to have been resolved with new xen kernel.
+3) Transition to using PXE boot for zLine platform build.
+   a) Configured the virtual server known as "rpmcache" to use DHCP with a
+      statically assigned IP address.  
+   b) Set up an RSYNC mirror of the SuSE repositories on "rpmcache".
+   c) Host all ISO's related to SuSE and mount the disk images through loop
+      back for presentation as HTTP install sources.
+   d) Setup TFTP server on "rpmcache" to facilitate PXE boot.
+   e) Modify DHCP server on NS1 to chain request to "rpmcache".
+   f) Build isolinux config in rpmcache's to serve up a boot menu
+      that starts an install from our repositories via http.
+   g) In process of moving tft boot dir and tft server to NS1 as there
+      is a problem with the DHCP hand off to rpmcache.
+4) Built from source, several versions of xen 3.3 through xen 4.0.2 rc1
+   attempting to find a combination that will allow run windows PV 
+   drivers. 
+   a) Finally found a combination that "works" with a SUSE 11.3 kernel.
+   b) Produced an hg patch that allows for building against gcc 4.5
+   c) Early testing shows up to approximately 500 MB/s throughput 
+      on windows virtual disk (good).
+   d) Transplanted the working PV Windows VM to our standard Xen platform
+      succesfully.
+   e) Successfully got our ZFS storage domain to provide backing storage
+      for the PV Windows domU virtual disk. (yea!)
+
+
+
+
+27-AUG-2010
+1) Completed porting CRedis unit test to native win32 (was POSIX only).
+2) Completed bringing openDNSResponder code base into our win32 build tree.
+   Licensing issues from Apple prevented our using the Bonjour SDK for Windows.
+3) Ported Google Protocol buffers and all unit test to our Win32 build framework.
+4) The above 3 items where pre-requisites to getting our Windows domU
+   communicating with dom0 on the zLine/Bluescale platform.
+   Working with Josh to pick the right technology.
+5) Testing of windows PV on Xen:
+   Spent a day trying to get Centos Dom0 to work with Xen - no go.
+   Spent 2 days on SuSE 11.3 with Xen 4.01 - still in progress.
+6) Slip-streamed our own HTTP install repository onto the OpenSuSE NET install CD image.
+7) Started investigations into a customer issue that is holding back the purchase of 12 nTier 700s
+   They can't make Windows ISSE FTP services work with the FtpProxy agent they have.
+   I created a VM and have been able to make it work in my testing.
+   Conference call on Tuesday with the customer to see if we can't help them resolve the issue.
+
+

@@ -1,0 +1,45 @@
+Brace expansion.
+echo \"{These,words,are,quoted}\"   # " prefix and suffix
+# "These" "words" "are" "quoted"
+
+
+cat {file1,file2,file3} > combined_file
+# Concatenates the files file1, file2, and file3 into combined_file.
+
+cp file22.{txt,backup}
+# Copies "file22.txt" to "file22.backup"
+#
+
+
+Extended Brace expansion.
+echo {a..z} # a b c d e f g h i j k l m n o p q r s t u v w x y z
+# Echoes characters between a and z.
+
+echo {0..3} # 0 1 2 3
+# Echoes characters between 0 and 3.
+
+# Tells bash that it should exit the script if any statement returns a non-true return value.
+# Note that this hides return codes from $?
+# http://www.davidpashley.com/articles/writing-robust-shell-scripts.html
+set -e 
+set -o errorexit 
+set +e
+# ignores non zero return codes from bash script commands.
+set -u  # generates a bash error if any uninitalized variable is accessed.
+set -o nounset
+
+
+#using exec to redirect output for logging: http://www.linuxjournal.com/content/bash-redirections-using-exec
+echo hello
+if test -t 1; then
+    # Stdout is a terminal.
+    exec >log
+else
+    # Stdout is not a terminal.
+    npipe=/tmp/$$.tmp
+    trap "rm -f $npipe" EXIT
+    mknod $npipe p
+    tee <$npipe log &
+    exec 1>&-
+    exec 1>$npipe
+fi

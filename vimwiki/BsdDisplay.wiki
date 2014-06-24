@@ -1,0 +1,31 @@
+vesa boot display:
+	- Enable the kernel to boot with vesa suport in loader.conf:
+		vesa_load="YES"
+
+	- Set tty's to use a different resolution:
+		First issue "vidcontrol -i mode" to get a list of modes available.  Then, edit /boot/device.hints and set:
+		- hint.sc.0.at="isa"
+		- hint.sc.0.flags="0x180"
+		- hint.sc.0.vesa_mode=0x1f0
+
+		Where, 0x1f0 is the vesa mode you want (0x14c = 1920x1080)
+
+
+Script to change X's handling of control/caps lock:
+
+	if [ $DISPLAY ]
+	then
+	  # Add the 3 lines below to Convert caps-lock into Control
+	  xmodmap -e 'remove Lock = Caps_Lock'
+	  xmodmap -e 'keysym Caps_Lock = Control_L'
+	  xmodmap -e 'add Control = Control_L'
+
+	  # Add the 3 lines below to use the Right-Control as Caps-Lock
+	  #xmodmap -e 'remove Control = Control_R'
+	  #xmodmap -e 'keysym Control_R = Caps_Lock'
+	  #xmodmap -e 'add Lock = Caps_Lock'
+
+	  # Or add the 3 lines below to use the right Windows key as Caps-Lock
+	  #xmodmap -e 'keysym Super_R = Caps_Lock'
+	  #xmodmap -e 'add Lock = Caps_Lock'
+	fi

@@ -1,0 +1,38 @@
+* Windows Networking
+* ZFS Issue - Double read after write buffer resolve.
+* NTFS Resize on install/configure.
+* GUI Exception so rails default error page doesn't show.
+* Worker faults shouldn't hang the UI
+
+
+Testing
+* More threads per windows drive
+* Passed thru network IO
+* Engineering Machines should be part of the nightly test pool.
+* ZFS Test Suite 
+* PJD's ZFS test.
+
+
+Nice To Have
+* devfs/cam crashes.
+* Early messages on new install
+* AuditD <-> UI disk status gives you unknown.
+
+
+Features:
+* SD Crash dump management.
+* Upgrade over network (hosting)
+* Blinky lights
+
+
+Today:
+* Disable Templates
+* Disable xenbr1
+* Windows vs Dom0 USB ports on a 500.
+* SGL: 10Gbe vs 4x1Gbe 
+* Get 3 or 4 machines running a windows VM to detect network issues.
+
+
+Benson Talk:
+* We're winning business from competetors.  
+* How do we track software maturity?  How does that track verson numbers.

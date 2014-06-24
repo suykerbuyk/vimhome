@@ -1,0 +1,48 @@
+
+zpool create vmpool /dev/da?
+zfs create -V 1TB vmpool/data
+
+On a windows VM use sdelete -c (drvletter) to zero out as much free space as possible.  Note that powercfg.exe can be used to disable the hiberfil.sys (powercfg -h off), but I've found that the only way to delete the file is from the windows explorer.
+
+Back on the Linux host side, use:
+cp --sparse=always src dst
+then use 'du' to determine how much actual space is being used.
+
+Mounting On The Linux Hosts:
+fdisk -lu <file.img>
+
+Will tell you what the partition layout is in the image file, what the native block size is etc.  What is important is the offset to the (NTFS) file systems.  In my case it was as so:
+
+fdisk -lu disk0.bak
+
+Disk disk0.bak: 0 MB, 0 bytes
+255 heads, 63 sectors/track, 0 cylinders, total 0 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Disk identifier: 0xfd6f8e8c
+
+    Device Boot      Start         End      Blocks   Id  System
+disk0.bak1   *        2048    83884031    41940992    7  HPFS/NTFS
+
+So, block size is 512 bytes, and the NTFS partition starts at block number 2048, or byte offset 1048576.  Now we can use the loop device setup tool (losetup) to mount the partition in a loop device:
+
+losetup -o 1048576 /dev/loop0 disk0.bak
+
+Now we can mount the file system:
+mount -t ntfs-3g /dev/loop0 /mnt
+
+
+That's it!
+
+To unwind all the above:
+umount /mnt
+losetup -d /dev/loop0
+
+
+Packaging big files:
+bzip2 -kz9 W2K3x64_suse_sys.raw
+split --suffix-length=3 --bytes=512M --numeric-suffixes W2K3x64_suse_sys.raw.bz2 W2K3x64_suse_sys.raw.bz2.
+
+
+Floppy Disk:
+dd if=/dev/zero of=flop.img bs=512 count=2880
+qemu-img create -f qcow2 -o cluster_size=512 -b flop.img flop.qcow2

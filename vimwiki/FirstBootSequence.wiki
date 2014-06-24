@@ -1,0 +1,20 @@
+I. PXE Boot.
+	A. dd's images two the boot spindle
+	B. reboot
+II. FirstBoot
+	A. Stretch first system spindle to the full capacity of the disk.
+	B. Mirror first boot spindle to second boot spindle.
+	C. Configures the system for the installed hardware.
+	D. Reboot
+III. Startup with full images & LVM in place.
+	A. Storage Domain starts.
+		1). Answer the question - has a vmpool ever been created.
+		2). If if does not exists creates it
+	B. Dom0 waits storage domain to report the existance of the vmpool.
+	C. Check to see if windows system spindle is exported as a loop back device.
+		1) If not, request the storage from vmpool.
+		2) xm block-attach the windows system spindle to Dom0.
+		3) copy windows system spindle image to Dom0 mounted storage.
+	D. Check if the windows VM has been created.
+		1) If not, create and start.
+

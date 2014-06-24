@@ -1,0 +1,5 @@
+if_bxe.c has the latest greatest (>8.0) network methods
+
+We don't support anything but 64 bit ABI in netback. (see netback.c xnb_softc. abi)
+
+

@@ -1,0 +1,52 @@
+ = Resilient Strat Boot Device Options =
+
+== BIOS Raid ==
+=== Advantages ===
+* "Built In" - no further support required, fairly seemless for the end user. 
+=== Problems ===
+* !FreeBSD 8.x had an ata_raid driver that did support the bios raid on our boxes.
+* !FreeBSD 9.x moved to geom_raid and does not support the bios raid on our boxes.
+* Generally, disks can not be used or read except with the support of a compatible BIOS.
+* Rebuilds/re-mirroring is at the block level.  There is no understanding of which blocks are in use, so all must be copied/verified (no such thing as a sparce rebuild).
+* Failover is not seamless, often requiring end user intervention for both boot and rebuilding.
+=== Notes ===
+* Brian had an email dialog with Alexander Motin.  Alexander believes we should be able to make this work.  It may be as simple as making sure our boot loader includes the geom_raid device driver.  It may be as complex as teaching geom_raid how to recognize the bios raid disk signatures and the subsequent logical block mapping strategy.
+== Software Synchronized Redundant Devices ==
+=== Advantages ===
+* Requires no driver support, very minimal BIOS configuration.
+* Potentially imparts less 'wear' on the backup boot device because writes would only happen during synchronization.
+* Gives us total control of how and what is synchronized.
+=== Disadvantages ===
+* Failover will almost alway involve end user intervention. 
+* In the advent of device failure the end user will need to swap boot devices either physically or in BIOS in conjunction with a reboot.
+* Requires us to write and maintain code to effect every aspect of boot device synchronization.
+=== Notes ===
+* Our nanobsd configuration uses two bootable slices of 2.5 GB each, a shared configuration slice of 1 MB, and a shared persisted log storage slice made up of the remaining free space of the device.
+* When ever updating a boot slice on one device, we'd have to hook/wrap the nanobsd update scripts to mirror the operation on the inactive boot mirror.  Updates of the boot slices are done at the block level (dd).
+* The save_cfg scripts would need to be modified to mirror file system changes to the configuration partitions.
+* We'd have to come up with a way to keep the /var directory (hosted on the persisted partition), synchronized without creating conflict.  This partition hosts all system logs, crash dumps and perhaps most potentially problematic, the ports database.  
+== EFI Boot with ZFS Support ==
+=== Advantages ===
+* BSD kernel boot module supporting ZFS has been stable since 8.1.
+* EFI Boot support will become inevitable as trusted compute platform standards come into effect. All machines intended to run Windows 8 or Windows Server 2012 will be required to UEFI boot by default.
+* Would require no user intervention with the exception of possibly needing to remove/replace a defective boot device.
+* Gives us full control of rebuilding/resilvering and synchronizing of boot devices using ZFS constructs.
+* Synchronization is done at the file system, not the block level resulting in fast rebuilds.
+=== Disadvanges ===
+* Stable EFI support is still missing in !FreeBSD.
+* !FreeBSD has alpha level EFI boot support for x86 only.  The Google Summer Of Code project this year failed to demonstrate x64 support.  The problems seem to to the hodge podge of software tools rather then a specific technical issue.  The issue that stands out most is the linking of binaries in an EFI compatible way.
+* The existing !FreeBSD boot module that provides minimal ZFS bootstrap support would have to be ported to the EFI boot loader.  Conceptually, this would not require any invention, but is not trivial. An unknown is how much of the existing ZFS support depends upon legacy BIOS functions that would no longer be available. 
+* More feasability investigation is required, but a rough guess is that it would take between 2 and 6 man months to make work.
+=== Notes ===
+* The Google Summer of Code Project can be found here:
+	- [http://wiki.freebsd.org/SummerOfCode2012/IntelEFIBoot *!FreeBSD EFI Boot Support*]
+* Linux has had stable EFI support for many years.  Source code is available here:
+	- [http://sourceforge.net/projects/elilo/ ELILO: EFI Linux Boot Loader]
+* Windows introduced full EFI support with Windows 7/Server 2012.
+* Mac has full EFI support, but MAC firmware does not follow EFI conventions. Linux has however, been made to work on it.
+
+= Recomendations =
+- Invest the time to make BIOS Raid work. This could be as simple as making sure geom_raid is configured in the boot loader, or as complex as adding RAID signature detection and handling to geom_raid.
+- If the BIOS raid solution hits a road block, immediately switch to the software based disk and file system synchronization.
+- Long term, we should complete !FreeBSD EFI support and then port the ZFS boot module to an EFI loader module.
+

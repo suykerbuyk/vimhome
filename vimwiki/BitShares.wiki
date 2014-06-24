@@ -1,0 +1,3 @@
+Questions:
+    1. How is Bitshares connected to the value of Bitcoin?
+    2. 

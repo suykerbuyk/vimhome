@@ -1,0 +1,52 @@
+= Debugging Windows =
+
+== Checked vs Free builds of windows ==
+A checked build is what Microsoft calls a debug build.  A free build is a production/release build. Either can be used to debug windows. A checked build has optimizations disabled (stack frames are not optimized away) and many debug assertions/checks are present and are able signal the debugger of problems in advance of a kernel crash.  The debug symbols for both checked and free build are NOT present in the runtime binaries.  Symbols are dealt with seperately by the debugger (and usually downloaded as needed).
+
+
+== The VM files ==
+
+At the time of this writing (April 2012), two reference VM's where put into perforce at:
+//depot/users/johns/dbg_vms/
+
+* wdbgee.7z - checked build of windows server 2008 x64 r2, service pack 1
+* wdbger.7z - a minimal 32 bit win7 vim with the remote debug tools installed.
+
+Extract wdger.7z to a directory.  Three files will be extracted, WDBGER_SYS.raw WDBGER_SWAP.raw and wdbger.  "wdgber" is the vm configuration file. You will need to modify the disk image paths in this file to match your environment.  WDBER_SYS corresponds to the "C:" drive of the VM and WDBGER_SWAP is a dedicated drive ("S:") that serves as a place for windows to thrash its swap file in.  Having a separate swap disk avoids fragmentation of the system spindle and filling it up with useless non-zero data.   Periodically, once can restore the swap "disk" from the archive to restore it to a "cleared" state.
+
+Extract wdbgee.7z to a directory.  Two files will be extracted, WDBGEE_SYS.raw and wdbgee.  "wdbgee" is the VM config file and its disk file paths will have to be adjusted to match your environment. Being a checked build VM of Win2k8, and intended to be used for one off testing of device drivers and then destroyed, thus there is no dedicated swap file/disk.
+
+== Configuring wdgee for kernel/boot debugging ==
+
+Start up the wdbee VM.  Run "msconfig". In the 2nd (boot) tab, clicked advanced and select the check box for debug.  COM1 should be set to the default of 115200 baud.  After closing the advanced options dialog, you'll probably want to click the "Make Permanent" check box and the "Apply".
+
+Note that in order for COM1 to be a debug port option, you must have a line in the VM config (wdbgee) like the following:
+* serial='pty'
+This is the default in the config file provided.
+
+== Configuring wdbger for remote debugging ==
+This only thing you really need to do is confirm that the VM config file has the line:
+* serial='pty' 
+
+== Configuring the host Dom0 for windows serial port debugging ==
+
+The first thing that needs to be done is to connect the virual serial ports of wdbgee and wdbger.  Of the various methods I've seen, the utility "socat" seems to be the best/easiest.  Virtual serial ports are created as /dev/pts/X devices under Linux/Xen.  Socat allows us to connect any two pty devices (along with many other things).  
+
+Install the socat rpm on Dom0. Start both wdbgee and wdbger taking note of their numeric "ID's.  Use xenstore-read to find the pts mount point for the virtual serial ports:
+* xenstore-read /local/domain/dom-id/serial/0/tty
+where 'dom-id' is replaced with the domain id of wdbgee and wdbger.  Now we tell socat to connect the pts paths from xenstore-read:
+* socat /dev/pts/12 /dev/pts/10 & 
+The above assumes 12 & 10 are the vitual serial device instances for wdbgee & wdbger.
+
+== Debugging from wdbger ==
+
+Assuming the virtual serial ports are connected from the step above, start windbg (start->Debugging Tools->WinDbg).  In WinDbg, select file->kernel debug, or hit CTRL-G.  This should attach WinDbg to 'wdbgee'.  At any point, you should be able to select debug->break and cause wdbgee to "break" into the WinDbg debugger. 
+
+
+Typically, you are going to want to set up for automatically loading kernel symbols from Microsoft.  The symbol URI syntax looks like this:
+* SRV*c:\symbols\ms*http://msdl.microsoft.com/download/symbols
+and can be set via the GUI->Symbols, via an environmental variable (_NT_SYMBOL_PATH), or from the kd command prompt (.sympath).
+
+c:\tools\symbols\citrix;*c:\tools\symbols\ms*http://msdl.microsoft.com/download/symbols/ms
+
+

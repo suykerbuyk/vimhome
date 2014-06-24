@@ -1,0 +1,7 @@
+To add a user to wheel (and enabling su to root)
+   - pw useradd -n johns -u 1005 -d /usr/home/johns/ -G wheel -s /usr/local/bin/bash
+   - pw user mod johns -G wheel
+   - pw user mod root -s /usr/local/bin/bash
+
+Change the login shell of the current FreeBSD user:
+   - chsh -s /usr/local/bin/bash

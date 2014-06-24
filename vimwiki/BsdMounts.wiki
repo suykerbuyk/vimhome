@@ -1,0 +1,22 @@
+
+Mount a directory (usr/src) from another location:
+	- mount_nullfs /vmpool/perforce/SpectraBSD/head/ /usr/src
+
+Remount file system rw
+	- mount -o rw /
+	- mount -u /
+
+
+USB Drive Init via gpart:
+	- gpart show da0
+	- gpart delete -i 1 da0          (repeat for each available slice index)
+	- gpart destroy da0              (destroys the disk label)
+	- gpart create -s gpt da0        (creates a span for the whole disk)
+	- gpart add -t mbr -l label da0  (create the slice partition)
+	- newfs_msdos -F32 -L label /dev/da0p1    (format as FAT32)
+	- mount -t msdosfs -o large /dev/da0p1
+	
+USB Drive Init via fdisk:
+	- dd if=/dev/zero of=/dev/da0 bs=32768 count=4096
+	- fdisk -i /dev/da0
+	- newfs_msdos -F32 /dev/da0s1

@@ -1,0 +1,30 @@
+== Storage Domain Crash Dump Notes ==
+
+The infrastructure for automated crash dump information gathering is in place, but there are still a few caveats with our configuration that I detail here.
+
+=== How a BSD crash dump normally works: ===
+	- BSD crashes.
+	- On its way down, the kernel rights a copy of active memory to the swap device.
+	- On reboot but still in single user mode, BSD looks into the swap device for a crash dump.
+	- If a crash dump is found, the BSD utility coredump, reads the memory map in the swap device and converts it into flat file core dump in local storage (/var/crash), clearing the swap device of the crash dump.
+
+
+=== How we have modified the crash dump sequence. ===
+
+	- Storage Domain Crashes.
+	- On its way down, the storage domain dumps active memory to the swap device.
+	- There is no local storage space in the storage domain to host the coredump file.  We have moved this responsibility to Dom0 and given responsibility for running a modified version of coredump (dumpcore) to xenservice on start up of the domain.
+	- Dom0 host an NFS exported folder, in the same directory structure that hosts the backing store for the Storage Domain itself.  (/pool/local/vols/crash/0/).  
+	- When xenservice starts the storage domain, it launches dumpcore to "sniff" the storage domain swap device for the existence of a crash dump.  If found, it writes a core dump file to /pool/local/vols/crash.
+	- As the Storage Domain is booted into multi user mode, it launches a back ground thread from the redline_prep rc script (crash_analysis) that NFS mounts Dom0's /pool/local/vol/crash/0/ on the storage domain's /var/crash directory.  It then launches a modified version of "crash_info" on that core dump file, creating a core.txt file.
+	- core.txt contains is an plain text file describing the state of the BSD kernel at the time of the panic and or crash. Among other things, it has a back trace for every kernel thread and a brief process memory map.
+
+=== Caveats with our current configuration. ===
+	- When a storage domain panic occurs, we drop down to the kernel debugger "db".  In order to create the crash dump, one must give db the command "continue".
+	- Our current xen configuration is to reboot a crashed storage domain.  The reboot happens within the context of the hypervisor xen, not the control scripts of Dom0.  As a result, Dom0 never gets to "see" the core dumps.
+	- In order for Dom0 to see the crash dumps, one must issue a xm destroy StorageDomain immediately after executing "continue" at the Storage Domain's db prompt.  After the Storage Domain has been destroyed, use "rcxenservice start" to restart the storage domain and it will in turn call all the scripts involved with creating a coredump.txt file.
+
+=== Todo: ===
+	- Change Xen configuration for storage domain from restart to destroy for a crashed VM.
+	- Add a watchdog like function to Dom0 that detects a dead storage domain, and calls upon xenservice to restart it.
+	- Alter the Storage Domain's kernel config to NOT drop to the db prompt on a panic, but rather to do the crash dump and simply die.

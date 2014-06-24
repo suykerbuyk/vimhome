@@ -1,0 +1,21 @@
+Build and Install
+	- export MAKEOBJDIRPREFIX=/usr/home/johns/obj/
+	- make kernel-toolchain NOCLEAN=1
+	- make KERNCONF=XENHVM -DKERNFAST buildkernel NOCLEAN=1
+	- su
+	- export MAKEOBJDIRPREFIX=/usr/home/johns/obj/
+	- make installkernel  -DKERNFAST KERNCONF=XENHVM
+
+Getting tinderbuild to work:
+
+p4 client -t tinderbuild-ns1.eng.sldomain.com newClientName
+
+
+/usr/ports/archivers/rpm
+/usr/ports/databases/p5-DBD-mysql51
+/usr/ports/databases/p5-DBI
+/usr/ports/databases/mysql51-server
+echo "mysql_enable=\"YES\"" >> /etc/rc.conf
+/usr/local/etc/rc.d/mysql-server start 
+/usr/ports/spectra/rubygem-spectra_misc
+

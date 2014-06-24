@@ -1,0 +1,17 @@
+
+mkpcibridge script:
+ - ifconfig igb0 down
+ - ifconfig xnb0 down
+ - ifconfig xnb0 ether 01:23:45:67:89:01
+ - ifconfig bridge create
+ - ifconfig bridge0 addm igb0 addm xnb0 up
+ - ifconfig igb0 up
+ - ifconfig xnb0 up
+ - dhclient bridge0
+
+lagg interface for lacp:
+  - ifconfig igb1 up
+  - ifconfig igb2 up
+  - ifconfig igb3 up
+  - ifconfig lagg0 create
+  - ifconfig lagg0 up laggproto lacp laggport igb1 laggport igb2 laggport igb3

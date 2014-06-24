@@ -1,0 +1,13 @@
+zio_done - completion routine.  Defined as a function pointer of type zio_done_func_t
+vdev_io_start_func_t - Implimented as zio_vdev_io_start in cddl/contrib/opensolaris/uts/common/fs/zfs/zio.c
+vdev_io_done_func_t
+
+txg - transaction group
+vdev
+dmu - data management unith
+spa - storage pool allocator
+
+
+zio_pipe_stage_t *zio_pipeline[] - table of func pointers for zio vdev operations. zio_stage is an enum consiting of bit flags for each partiular ZIO operation (zio_impl.h).  
+
+zfs send -RD sys@tdoay | bzip2 -c | ssh root@server "bzcat | zfs recv sys/usr/home/johns/laptop"

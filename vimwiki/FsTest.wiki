@@ -1,0 +1,154 @@
+./fsx  -N 90000 -l 400m -c 100 testfile
+
+
+Build the tests on ns1
+	Create an account on ns1
+	Create the following directories or wherever you want them.
+	mkdir -p /usr/home/${USER}/obj
+	mkdir -p /usr/home/${USER}/perforce/SpectraBSD/ports
+	mkdir -p /usr/home/${USER}/ports/distfiles
+	mkdir -p /usr/home/${USER}/var/db/ports
+   
+Add the following environment variables to your .profile to point to the directories created above.
+	export P4CONFIG=.p4config
+	export MAKEOBJDIRPREFIX=/usr/home/${USER}/obj
+	export PORTSDIR=/usr/home/${USER}/perforce/SpectraBSD/ports
+	export DISTDIR=/usr/home/${USER}/ports/distfiles
+	export PORT_DBDIR=/usr/home/${USER}/var/db/ports
+   
+Create a .p4config file.
+	cd /usr/home/${USER}/perforce
+	vi .p4config
+
+Add the following data to the file
+	P4USER=<user>
+	P4CLIENT=<user>.ns1
+	P4PORT=perforce.eng:1666
+   
+Run the p4 client command.
+	cd /usr/home/${USER}/perforce
+	p4 client
+Add the following View.
+
+Root: /usr/home/<user>/perforce
+	View:
+       		//depot/SpectraBSD/... //<user>.ns1/SpectraBSD/...
+   
+Sync the following perforce configuration
+	p4 sync
+   
+Extract the code
+	cd $PORTSDIR/spectra/stf-zfs
+
+If this is NOT your first time building you must cleanup.
+	make clean
+	make extract
+   
+Make chages
+Common Files:
+	Include/Exclude Tests in the following file:
+		$PORTSDIR/spectra/stf-zfs/work/stf-zfs-x.x.x.xxxxxx/src/suites/fs/zfs/tests/functional/Makefile
+		(comment out exclude... to run all test)
+		dont run rename_dirs
+		add xattr and zones to exclude list
+	Specific tests:
+		$PORTSDIR/spectra/stf-zfs/work/stf-zfs-x.x.x.xxxxxx/src/suites/fs/zfs/tests/functional/<test_name>
+		(eg. change root to wheel in acl/setup.ksh)
+   
+To Build the tests with your changes NOTE YOU CAN ONLY BUILD ONCE
+	cd $PORTSDIR/spectra/stf-zfs
+	make
+   
+To clean (deletes everything you have just done)
+	cd $PORTSDIR/spectra/stf-zfs
+	make clean
+   
+Prepare to run the tests on your target machine
+Install and run the redline-dev script on your Dom0. Run the following commands as root
+monit stop all
+zypper ar http://rpmcache.eng/vendor vendor
+zypper ar http://rpmcache.eng/spectra spectra
+zypper mr -e -a
+zypper refresh
+zypper in redline-dev
+monit start all
+/etc/redline/development/configure
+service xenservice restart StorageDomain
+   
+If the configure script fails you must set up an IP Address manually
+On Dom0
+   xm network-attach StorageDomain bridge=xenbr0
+On the StorageDomain as root
+   dhclient xn1
+   
+Stop all uneeded services
+Log onto Dom0 as root
+monit stop all
+Log onto the StorageDomain as root
+monit stop all
+The rest of these procedures should be done on the storage domain
+Install the ZFS Test Procedures
+Mount root filesystem as read/write mount -u -o rw /
+mkdir /usr/home
+Mount ns1 mount ns1.eng:/usr/home /usr/home
+Set up some environment variables. (These can be put in your .profile or .bashrc file)
+export P4CONFIG=.p4config
+export MAKEOBJDIRPREFIX=/usr/home/<user>/obj
+export PORTSDIR=/usr/home/<user>/perforce/SpectraBSD/ports
+export DISTDIR=/usr/home/<user>/ports/distfiles
+export PORT_DBDIR=/usr/home/<user>/var/db/ports
+   
+Copy a p4 executabe to /usr/local/bin if one does not exist.
+Install the tests
+cd /usr/home/user/perforce/SpectraBSD/ports/spectra/stf-zfs
+make deinstall (This has always left some residual files so manually delete the rest)
+Run
+rm -rf /usr/local/SUNWstc-*
+make install
+   
+You can now unmount ns1
+umount /usr/home
+Setting up the ZFS tests to run
+Set up some environment variables (These can be put in your .profile or .bashrc file)
+export PATH=/usr/local/SUNWstc-stf/bin/amd64:$PATH
+export STF_SUITE=/usr/local/SUNWstc-fs-zfs
+export STF_TOOLS=/usr/local/SUNWstc-stf
+   
+Mount root filesystem as read/write mount -u -o rw /
+Enable procfs mount -t procfs procfs /proc
+If the configure step failed and the /scratch partition was not mounted.
+newfs /dev/ad2
+umount /tmp
+mount /dev/ad2 /tmp
+If /scratch is mounted, change /scratch to /tmp and configure 
+/scratch was added as part of the redline-dev install. We don't need /scratch but do need /tmp.
+umount /tmp
+Edit /etc/fstab. Replace /scratch with /tmp
+mount /tmp
+Run the following:
+mkdir /tmp/var_tmp
+rm -rf /var/tmp
+ln -s /tmp/var_tmp /var/tmp
+   
+Configuring the tests
+cd /usr/local/SUNWstc-fs-zfs/tests/functional
+Note: You may need to modify the disk list to how many disks you have.
+stf_configure -c DISKS="/dev/da0 /dev/da1 /dev/da2 /dev/da3 /dev/da4 /dev/da5 /dev/da6 /dev/da7"
+   
+Running the tests
+time stf_execute
+Running an individual test
+Go to the directory which contains the test you would like to run.
+stf_execute name_of_test_001_pos
+eg
+cd /usr/local/SUNWstc-fs-zfs/tests/functional/reservation
+stf_execute reservation_001_pos
+   
+Modifying the tests
+Suggested modifications
+Add xattrs and zones to the exclude list
+Changing the timeout
+Run the following
+cd /usr/local/SUNWstc-fs-zfs/tests/functional
+
+grep -Rl STF_TIMEOUT= * |

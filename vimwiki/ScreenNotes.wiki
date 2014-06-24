@@ -1,0 +1,54 @@
+
+
+
+su - johns -c "/usr/bin/screen -dmS connect.newbie /usr/home/johns/connect.newbie"
+
+perhaps startproc
+
+
+
+From: http://stackoverflow.com/questions/1628204/how-to-run-a-command-in-background-using-ssh-and-detach-the-session
+To be more specific, try this: ssh -t $username@$node screen -dm -S testing ./monitor/concat.sh
+
+You should find that the prompt returns immediately, and that concat.sh is running on the remote machine. I'll explain some of the options:
+
+ssh -t makes a TTY. screen needs this.
+screen -dm makes it start in "detached" mode. This is like "background" for your purposes.
+-S testing gives your screen session a name. It is optional but recommended.
+Now, once you've done this, you can go to the remote machine and run this: screen -r testing
+
+This will attach you to the screen session which contains your program. From there you can control it, kill it, see its output, and so on. Ctrl-A, then d will detach you from the s
+
+
+===========================
+.tmux_conf
+set-option -g display-panes-time 5000
+set-option -g display-time 3000
+set-option -g history-limit 5000
+et
+
+
+
+
+
+set-option -g mouse-select-pane on
+#set-option -g mode-mouse on
+set-window-option -g mode-keys vi
+bind-key C-h pipe-pane -o 'cat >>~/#H-#W-#I-#P'
+unbind-key o
+unbind-key space
+bind-key space select-pane -t :.+
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+bind-key C-a last-pane
+
+
+# move x clipboard into tmux paste buffer
+bind C-p run "xclip -o | tmux load-buffer"
+# # move tmux copy buffer into x clipboard
+bind C-y run "tmux save-buffer - | xclip -i -selection clipboard"
+
+bind-key -t vi-copy 'v' begin-selection
+bind-key -t vi-copy 'y' copy-selection

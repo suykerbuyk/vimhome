@@ -1,0 +1,14 @@
+HLS -> MSPS
+- Baseline SSP on 7 clients (4 days)
+- Cisco switch, managed via 
+- Comparison test to MSPS 2.0
+- Deploy MSPS 2.0 June 2 - June 30
+-
+
+Management Team:
+
+- Howdy - direct sales
+- Mike Perkins - Internal products
+	- Chad SVP Enginneering
+	- 	Tho - Engineering director
+

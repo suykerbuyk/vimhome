@@ -1,0 +1,13 @@
+Prep the USB sick:
+	diskpart.exe
+	list disk (Find USB device)
+	select disk 1 (careful! select USB drive)
+	clean
+	create partition primary
+	select partition 1
+	active
+	format quick fs=fat32 (UEFI can only USB boot to FAT32, not NTFS)
+	assign (In this example, USB mount point become F: when assigned.)
+	exit
+
+Then copy the contents of the .ISO file (file system contents) to the USB stick.

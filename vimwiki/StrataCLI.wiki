@@ -1,0 +1,11 @@
+
+
+How to configure CIFS server:
+network dnsserver create --id=10.1.1.250 --force
+network dnsserver delete 10.1.0.9 --force
+config hostname update --name=belgol-data
+network datainterface update --id='Data 1' --dhcp=true --force
+config cifsservice update --joindomain --force
+config pool create --name=Pool1 --usealldisks
+config volume create --pool Pool1   --name Sharefolder1
+config cifsshare create --volume=Sharefolder1 --name=Sharefolder1 --path=/

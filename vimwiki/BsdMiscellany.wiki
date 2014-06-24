@@ -1,0 +1,19 @@
+Install VIM without X11
+make WITHOUT_X11=yes install clean
+
+==============================================
+
+===========================================
+
+
+Compressed tar archives:
+
+tar -cJf viConfig.txz .vi* 
+
+=============================================
+Setting VI mode in the readline/shell
+
+in .inputrc add the following line:
+set editing-mode vi
+set keymap vi
+

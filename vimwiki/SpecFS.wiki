@@ -1,0 +1,48 @@
+Sample start up script:
+
+=================================
+#!/bin/sh
+
+NT=256          # Number of NFS Threads on Host
+HOST_NAME="ko-700"      # NFS Host
+HOST_ADDRESS="50.50.50.50"      # NFS Host
+
+MNT_POINT="${HOST_ADDRESS}:/DATA"
+
+#CLIENTS="client1.eng"
+#CLIENTS="client1.eng,client2.eng,client3.eng"
+CLIENTS="client1.eng,client2.eng,client3.eng"
+
+LOAD=50
+INCR_LOAD=50
+
+PROC=64 # Number of Processes Per Client to Run
+RT=300  # Run Time of Test
+WT=300  # Warmup Time of Test
+cmd="ruby run_specsfs.rb -p ${PROC} -D ${HOST_NAME}.${NT}T.R0 -c ${CLIENTS} -l ${LOAD} -i ${INCR_LOAD} -m ${MNT_POINT} -W ${WT} -R ${WT}"
+echo "Running Command [${cmd}]"
+eval ${cmd}
+=================================
+
+Validate a script:
+java SfsManager -r sfs_nfs_rc_js -s js -v 2
+
+Sample config:
+================================
+# Script to create a zpool
+#!/bin/sh
+data_drives=""
+log_drives=""
+for i in `camcontrol devlist | awk -F, '/SEAGATE/ {print $2}' | cut -d ')' -f 1`
+do
+        data_drives="$data_drives $i"
+done
+for i in `camcontrol devlist | awk -F, '/MTFDDAC050S/ {print $2}' | cut -d ')' -f 1`
+do
+        log_drives="$log_drives $i"
+done
+echo zpool create DATA $data_drives
+echo zpool add DATA log mirror $log_drives
+
+zpool create DATA $data_drives && zpool add DATA log mirror $log_drives
+===============================

@@ -1,0 +1,3 @@
+Compress directory with xz:
+	- tar cJvf directory.txz directory/
+	- XZ_OPT=-9 tar cJvf directory.txz directory/

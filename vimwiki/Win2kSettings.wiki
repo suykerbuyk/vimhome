@@ -1,0 +1,213 @@
+The settings below make use of the Group Policy Editor.  Start it by running gepedit.msc
+
+To allow remote log-onwithout passwords:
+Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\
+   Accounts: Limit local account use of blank passwords to console logon only.
+
+Disable ctrl-alt-del to log on:
+Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\
+   Interactive logon: Do not require CTRL+ALT+DEL
+
+To allow for simple user passwords:
+Computer Configuration\Windows Settings\Security Settings\Account Policies\Password Policy\
+   Password must meet complexity requirements
+
+To set passwords to never expire:
+Computer Configuration\Windows Settings\Security Settings\Account Policies\Password Policy\
+   Maximum Password Age (set to 0)
+
+Do disable the shutdown even dialog prompts on system shutdown/reboot:
+Computer Configuration\Administrative Templates\System\
+  Display Shutdown Event Tracker
+
+Do not display the manage your server on log on:
+Computer Configuration\Administrative Templates\System\
+  Do not display Manage Your Server page at logon
+
+
+How to disable hibernate:
+   powercfg.exe /hibernate off
+
+If the above gives you trouble, Open Regedit and go to HKEY_CURRENT_USER\Control Panel\PowerCfg
+You should see CurrentPowerPolicy and the Value is set to 0 change that Value to 3 and then run from an administrator command prompt powercfg.exe /h off
+
+To enable verbose booting:
+bcdedit /set sos on
+
+To enab	<enter description here>le "test" signed drivers (non-whql):
+bcdedit /set testsigning on
+
+To add back Disk Clean up (cleanmgr) to W2K8 search winsxs for cleanmgr.*
+dir /s /b c:\windows\winsxs\cleanmgr*
+copy cleanmgr.exe to %systemroot%\System32
+copy cleanmgr.exe.mui to %systemroot%\System32\en-US
+
+============================================================
+copy updates to s:\storageSrver\OS Updates
+mk install dir.
+expand *.msu "s:\storageSrvr\OS Updates\install"
+dism /online /Add-Package /PackagePath:"s:\storageSrvr\OS Updates\install"
+
+Cross check installed packages:
+dism /Online /Get-Packages
+
+=============================================================
+Setting up partitions:
+
+Write a text file like what follows, save it as partitions.txt and execute it like this:
+diskpart /s partitions.txt
+
+select disk 1
+select partition 2
+extend
+
+select disk 2
+clean 
+convert gpt
+create partition primary align=64 ID=ebd0a0a2-b9e5-4433-87c0-68b6b72699c7
+format fs=ntfs unit=64k label="Data1" quick
+
+select disk 3
+clean 
+convert gpt
+create partition primary align=64 ID=ebd0a0a2-b9e5-4433-87c0-68b6b72699c7
+format fs=ntfs unit=64k label="Data2" quick
+
+select disk 3
+clean 
+convert gpt
+create partition primary align=64 ID=ebd0a0a2-b9e5-4433-87c0-68b6b72699c7
+format fs=ntfs unit=64k label="Data3" quick
+
+select disk 4
+clean 
+convert gpt
+create partition primary align=64 ID=ebd0a0a2-b9e5-4433-87c0-68b6b72699c7
+format fs=ntfs unit=64k label="Data4" quick
+
+select disk 5
+clean 
+convert gpt
+create partition primary align=64 ID=ebd0a0a2-b9e5-4433-87c0-68b6b72699c7
+format fs=ntfs unit=64k label="Data4" quick
+
+select disk 6
+clean 
+convert gpt
+create partition primary align=64 ID=ebd0a0a2-b9e5-4433-87c0-68b6b72699c7
+format fs=ntfs unit=64k label="Data4" quick
+
+
+=============================================================
+
+iozone testing:
+iozone -f D:\testfile -i0 -i1 -i2 -i5 -a -g 8g -R results.csv
+
+=============================================================
+
+Setting up a windows system partition from FreeBSD
+
+truncate -s 0 W2K8x64_suse_sys.raw
+truncate -s 20G W2K8x64_suse_sys.raw
+mdconfig -a -t vnode -f W2K8x64_suse_sys.raw
+gpart create -s gpt /dev/md4
+gpart add -b 2048 -s 204600 -t \!E3C9E316-0B5C-4DB8-817D-F92DF00215AE /dev/md4
+gpart add -b 206648 -t         \!EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 /dev/md4
+
+
+
+truncate -s 10G image
+mdconfig -a -t vnode -f image
+gpart create -s mbr /dev/md4
+gpart add -b 2048 -s 204600 -t ntfs /dev/md4
+gpart add -s 20206648 -t ntfs /dev/md4
+/usr/local/sbin/mkntfs -f -s 512 -z 2 -H 0 -S 0 -p 0 -L 'system' -c 65536 /dev/md4s2
+
+---------------------------------
+
+#!/bin/sh
+truncate -s 0 W2K8x64_suse_sys.raw
+truncate -s 20G W2K8x64_suse_sys.raw
+md_dev=`mdconfig -a -t vnode -f W2K8x64_suse_sys.raw`
+gpart create -s mbr /dev/$md_dev
+md_s1=`gpart add -b 2048 -s 204600 -t ntfs /dev/$md_dev`
+md_s2=`gpart add -b 206648 -t         ntfs /dev/$md_dev`
+md_s1=`echo ${md_s1%% *}`
+md_s2=`echo ${md_s2%% *}`
+
+if [ $md_dev's1' != $md_s1 ]
+then
+        echo Error in creating partition, found $md_s1, expected $md_dev's1'
+fi
+
+if [ $md_dev's2' != $md_s2 ]
+then
+        echo Error in creating partition, found $md_s2, expected $md_dev's2'
+fi
+
+/usr/local/sbin/mkntfs -f -s 512 -z 2 -H 0 -S 0 -p 0 -L 'system' -c 65536 /dev/$md_s2
+
+mdconfig -d -u $md_dev
+
+
+-------------------------------------
+
+#!/bin/sh
+truncate -s 0 W2K8x64_suse_sys.raw
+truncate -s 20G W2K8x64_suse_sys.raw
+md_dev=`mdconfig -a -t vnode -f W2K8x64_suse_sys.raw`
+gpart create -s gpt /dev/$md_dev
+md_p1=`gpart add -b 2048 -s 204600 -t \!E3C9E316-0B5C-4DB8-817D-F92DF00215AE /dev/$md_dev`
+md_p2=`gpart add -b 206648 -t         \!EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 /dev/$md_dev`
+md_p1=`echo ${md_p1%% *}`
+md_p2=`echo ${md_p2%% *}`
+
+if [ $md_dev'p1' != $md_p1 ]
+then
+        echo Error in creating partition, found $md_p1, expected $md_dev'p1'
+fi
+
+if [ $md_dev'p2' != $md_p2 ]
+then
+        echo Error in creating partition, found $md_p2, expected $md_dev'p2'
+fi
+
+/usr/local/sbin/mkntfs -F -f -s 512 -z 2 -H 0 -S 0 -p 0 -L 'system' -c 65536 /dev/$md_p2
+
+
+
+mdconfig -d -u $md_dev
+
+
+
+
+/usr/local/sbin/mkntfs -f -Q -s 4096 -z 1 -H 255 -S 0 -p 0 -L 'system' -c 65536 -F /dev/md0s2
+============================================================
+Installing the windows updates on Storage server:
+
+Trick #1:
+FOR %1 IN (*.MSU) do cmd /c %1 /quiet /norestart
+Trick #2:
+MD c:\QFE
+Expand *.msu –F:wi*.cab c:\QFE
+Run installation w/DISM 
+DISM /online /Add-Package/PackagePath:C:\QFE /quiet
+Trick 3:
+Use DISM to install them to an offline .wim file.
+
+============================================================
+
+Disable IPV6 Completely:
+We need to completely disable IPv6 to install Exchange 2007 in the registry by following the below steps:
+ 
+Open Registry with "Regedit"
+ 
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters
+ 
+Create a dword (32-bit) value and name it as "Disabled Components" and then click OK
+ 
+Double click "Disabled Components" and type 0xffffffff(hexadecimal value) or 4294967295 (Decimal value)
+ 
+Please note: The above value 0xffffffff(hexadecimal value) or 4294967295 (Decimal value) will disable all IPv6 components, except the IPv6 loopback interface.
+===============================================================
+

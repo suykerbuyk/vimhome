@@ -1,0 +1,7 @@
+Bare metal sfs run 2 x64 with no SSD
+XDD 4K block sizes without SSD
+Add in XDD with ZIL striped 4k blocks.
+
+
+
+mount.nfs 50.50.50.50:/DATA /DATA

@@ -1,0 +1,13 @@
+staf local stax list jobs
+staf local stax list job 1895 testcases
+
+Running test from build2
+~/p4streams/redline/tools/test_framework/tests
+.longTest=
+staf build2.eng.sldomain.com stax execute \
+  file /usr/home/johns/p4streams/redline/tools/test_framework/tests/strata_slim.xml \
+  function run_nTier_tests args '{"basedir":"/usr/home/johns/p4streams/redline/",
+  "machine_name":"brick",
+  "logdir":"/usr/home/johns/temp/",
+  "runtime":"long"}' \
+  wait returnresult details

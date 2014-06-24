@@ -1,0 +1,11 @@
+git fetch origin master
+git push origin task-TA8522-Implement_Clear_History
+
+What's staged with the next commit:
+git diff -U --cached
+
+
+git pull origin master
+
+Check previous revision:
+git diff HEAD@{1} path/path/file

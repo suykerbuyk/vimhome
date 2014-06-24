@@ -1,0 +1,49 @@
+
+alias vb=VBoxManage
+vb createvm --name Win7NetTest --ostype Windows7 --basefolder /work/vbox/machine/ --register
+vb modifyvm        Win7NetTest --nic1 bridged --bridgeadapter1 em0
+vb modifyvm        Win7NetTest --memory 1024
+vb createhd --filename /work/vbox/disks/Win7NetTest/Win7NetTest-sys.vdi --size $((1024 * 50))
+vb storagectl      Win7NetTest --name achci --add sata --controller IntelAHCI --sataportcount 8 --bootable on --hostiocache on
+vb storageattach   Win7NetTest --storagectl achci --port 0 --device 0 --type hdd --medium /work/vbox/disks/Win7NetTest-sys.vdi
+vb storagectl      Win7NetTest --name ide --add ide --controller PIIX4
+vb storageattach   Win7NetTest --storagectl ide --port 0 --device 0 --type dvddrive --medium /usr/home/johns/tools/winInstall/win7/Win7sp1/en_windows_7_enterprise_with_sp1_x86_dvd_u_677710.iso
+vb modifyvm Win7NetTest --mouse usbtablet
+vb sharedfolder add Win7NetTest --name home --hostpath /usr/home/johns/
+vb modifyvm Win7NetTest --vrdeport 5000
+VBoxHeadless -s Win7NetTest
+
+vb storageattach Win7NetTest --storagectl ide --port 0 --device 0 --medium additions
+
+vb storageattach Win7NetTest --storagectl achci --port 1 --device 0 --medium none
+vb modifyhd /work/vbox/disks/Win7NetTest/Win7NetTest-swap.vdi --type immutable
+vb storageattach Win7NetTest --storagectl achci --port 1 --device 0 --type hdd --medium /work/vbox/disks/Win7NetTest/Win7NetTest-swap.vdi
+
+vb createvm --name Win2k8NetTest --ostype Windows2008_64 --basefolder /work/vbox/machine/Win2k8NetTest/ --register
+vb modifyvm        Win2k8NetTest --nic1 bridged --bridgeadapter1 em0
+vb modifyvm        Win2k8NetTest --memory 2048
+vb createhd --filename /work/vbox/disks/Win2k8NetTest/Win2k8NetTest-sys.vdi --size $((1024 * 50))
+vb createhd --filename /work/vbox/disks/Win2k8NetTest/Win2k8NetTest-swap.vdi --size $((1024 * 4))
+vb storagectl      Win2k8NetTest --name ahci --add sata --controller IntelAHCI --sataportcount 8 --bootable on --hostiocache on
+vb storagectl      Win2k8NetTest --name ide --add ide --controller PIIX4
+vb modifyvm        Win2k8NetTest --mouse usbtablet
+vb storageattach   Win2k8NetTest --storagectl ahci --port 0 --device 0 --type hdd --medium /work/vbox/disks/Win2k8NetTest/Win2k8NetTest-sys.vdi
+vb storageattach   Win2k8NetTest --storagectl ahci --port 0 --device 0 --type hdd --medium /work/vbox/disks/Win2k8NetTest/Win2k8NetTest-swap.vdi
+vb storageattach   Win2k8NetTest --storagectl ide --port 0 --device 0 --type dvddrive --medium /usr/home/johns/tools/winInstall/2008/w2k8r2/en_windows_server_2008_r2_standard_enterprise_datacenter_web_x64_dvd_x15-50365.iso
+vb modifyvm Win2k8NetTest --vrdeport 5001
+
+
+Get a guest IP address:
+vb guestproperty get Win2k8NetTest /VirtualBox/GuestInfo/Net/0/V4/IP
+
+Send Ctrl-Alt-Del to a VM:
+VBoxManage controlvm testMachine keyboardputscancode 1d 38 53
+
+
+sudo VBoxManage internalcommands createrawvmdk -filename usb.vmdk -rawdisk /dev/da0
+
+
+vb storageattach w7x86 --storagectl ahci --port 0 --device 0 --medium none
+vb closemedium disk /usr/home/johns/vbox/disk/w7x86_sys.vdi --delete
+vb unregistervm w7x86 --delete
+

@@ -1,0 +1,5 @@
+Assumes da0 is the USB device.
+- dd if=/dev/zero of=/dev/da0 bs=2M count=4
+- fdisk -i /dev/da0 ; select "12 as the type, defaults for everything else.
+- newfs_msdos -L DISK_LABEL -F32 /dev/da0s1
+- mount -t msdosfs -o -u=johns,-g=wheel /dev/da0s1 /mnt

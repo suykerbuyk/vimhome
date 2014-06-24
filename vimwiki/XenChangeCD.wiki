@@ -1,0 +1,28 @@
+Heads up for anyone who's stuck with trying to change a CD half-way 
+through an HVM installation; I couldn't find an answer to this on Google. 
+
+1 - just changing the file which contains the ISO image does nothing 
+
+2 - in principle, you can get into the Qemu monitor from your 
+installation Window, and change the disk from the monitor. You should 
+apparently type CTL-ALT-2 to enter the monitor, or CTL CTL CTL-ALT-2. 
+This doesn't work for me - he the number at 
+the beginning of this entry (in my case, 5632). 
+
+ > /usr/sbin/xm block-detach xm-domain-name 5632 
+ > /usr/sbin/xm block-attach xm-domain-name file://path/to/my/ISO /dev/h see that nothing's changed. 
+
+4 - the virsh way (does work): 
+
+ > virsh list 
+
+get the Id number of your domain from the first column 
+
+ > virsh detach-disk Id-number hdc 
+ > virsh attach-disk Id-number /path/to/your/new/ISO hdc --driver file 
+--type cdrom --mode readonly 
+
+
+
+
+disk = [ "file:/var/xen/images/yum.img,hda,w", "file:/var/xen/images/yum-cd-10.06.09.iso,hdc:cdrom,r" ] 

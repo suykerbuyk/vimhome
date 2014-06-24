@@ -1,0 +1,9 @@
+Fix end to end build and image creation (should always work, should always be tested).
+Fix raid system spindle issues.
+Move windows system spindle to storage domain.
+Be able to fork the build system for risky platform changes.
+Build with each build, build two storage domains - release and development.
+Revisit GPLPV and possibly win32 ext3 driver to quickly create FS pass through.
+
+Modify qemmu to boot windows from storage domain:
+products/zLine/domains/control/rpms/xen/SOURCES/xen/tools/ioemu-remote/xenstore.c

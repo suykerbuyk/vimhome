@@ -1,0 +1,32 @@
+BsdNetPortConfig
+[[BsdNfseStrataImplementation]]
+
+Exporting NFSE.  
+/etc/nfs.exports
+ /pool -maproot=0 -sec=sys
+
+Linux /etc/fstab
+169.254.10.1:/pool /pool/data nfs nfsvers=3,sec=sys,rw 0 0
+
+===================================
+Modify !SpectraBSD host name:
+	- hostname in /etc/rc.conf
+	- host-name in /etc/local/avahi/avahi-daemon.conf
+	- persistant of above in /conf/base/etc/local/avahi/
+
+----------------------------------
+
+===================================
+Lagg Failover from em0 to wlan0:
+
+wlans_ath0="wlan0"
+ifconfig_em0_ipv6="inet6 accept_rtadv"
+ifconfig_em0="ether 00:1f:3a:0f:d6:3c up"
+ifconfig_wlan0="WPA up"
+cloned_interfaces="lagg0"
+ifconfig_lagg0="laggproto failover laggport em0 laggport wlan0 DHCP up"
+===================================
+Network statistics:
+
+/usr/bin/netstat -i -b -n -I lagg0
+===================================

@@ -1,0 +1,15 @@
+Logging Stuff:
+	- lwsm tap-log dcerpc - trace |tee lw.log
+	- lwsm tap-log lsass lsass-ipc trace |tee lw.log
+	-
+
+IPC Message handler LWMsgSessionClass
+
+IPC Message Class handlers are initialized at lwmsg/src/assoc-session.c:582
+	- static LWMsgSessionClass default_class =
+
+
+lwregshell set_value "[HKEY_THIS_MACHINE\Services\lwio\Parameters\Drivers\rdr\]" SigningEnabled   1
+lwregshell set_value "[HKEY_THIS_MACHINE\Services\lwio\Parameters\Drivers\rdr\]" SigningRequired  0
+
+

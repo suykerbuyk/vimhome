@@ -1,0 +1,11 @@
+
+
+camcontrol devlist -v 
+camcontrol smpplist enc0
+
+
+Shutdown all links on a expander connection:
+for i in 4 5 6 7; do camcontrol smppc enc0 -p $i -o disable; done
+
+Reconnect/restart all links on a set of phy links on and expander
+for i in 4 5 6 7; do camcontrol smppc enc0 -p $i -o linkreset; done
