@@ -1,0 +1,2 @@
+#!/bin/sh
+tar -cf - "$1" | 7za a -t7z -si -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on "$1.`date +"%g%V%u.%H%d%S"`".tar.7z

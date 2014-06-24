@@ -1,0 +1,6 @@
+#!/bin/sh
+for vm in `VBoxManage list runningvms |awk '{print $1}' | tr -d '"'` 
+do
+	echo -n $vm=
+	VBoxManage guestproperty get $vm /VirtualBox/GuestInfo/Net/0/V4/IP | awk '{print $2}'
+done
